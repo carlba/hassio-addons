@@ -15,8 +15,8 @@ RUN set -eu; \
     esac; \
     curl -fsSL -o /tmp/alloy.zip \
       "https://github.com/grafana/alloy/releases/download/${ALLOY_VERSION}/alloy-linux-${ALLOY_ARCH}.zip" && \
-    unzip -q /tmp/alloy.zip -d /tmp/alloy-extract && \
-    install -m 0755 /tmp/alloy-extract/alloy-linux-${ALLOY_ARCH} /usr/bin/alloy && \
-    rm -rf /tmp/alloy.zip /tmp/alloy-extract
+    unzip -q /tmp/alloy.zip -d /tmp && \
+    install -m 0755 /tmp/alloy-linux-${ALLOY_ARCH} /usr/bin/alloy && \
+    rm -f /tmp/alloy.zip /tmp/alloy-linux-${ALLOY_ARCH}
 
 COPY rootfs /
