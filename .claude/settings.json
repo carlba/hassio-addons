@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:developers.home-assistant.io)",
+      "WebFetch(domain:grafana.com)",
+      "WebFetch(domain:hub.docker.com)",
+      "Bash(curl -s https://raw.githubusercontent.com/grafana/alloy/main/Dockerfile)",
+      "Bash(curl -s https://api.github.com/repos/grafana/alloy/releases/latest)",
+      "Bash(curl -s \"https://api.github.com/repos/home-assistant/addons-example/git/trees/main?recursive=1\")",
+      "Bash(curl -sL \"https://api.github.com/repos/home-assistant/addons-example/git/trees/master?recursive=1\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -sL \"https://api.github.com/repos/home-assistant/addons-example\")",
+      "Bash(curl -sL \"https://api.github.com/repos/home-assistant/addons-example/git/trees/main?recursive=1\" -H \"Accept: application/vnd.github+json\")",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/home-assistant/addons-example/main/example/Dockerfile\")",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/home-assistant/addons-example/main/example/config.yaml\")",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/home-assistant/addons-example/main/repository.yaml\")",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/home-assistant/addons-example/main/example/rootfs/etc/services.d/example/run\")",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/home-assistant/addons-example/main/example/rootfs/etc/services.d/example/finish\")",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/home-assistant/addons-example/main/example/apparmor.txt\")",
+      "WebFetch(domain:community.home-assistant.io)",
+      "Bash(mkdir -p /Users/cbackstrom/development/hassio-addons/.claude/plans)",
+      "Bash(curl -s https://api.github.com/repos/grafana/alloy/releases/tags/v1.19.1)",
+      "Bash(curl -s https://api.github.com/repos/grafana/alloy/releases)",
+      "Bash(curl -s -L https://api.github.com/repos/grafana/alloy/releases/latest)",
+      "Bash(chmod +x /Users/cbackstrom/development/hassio-addons/grafana-alloy/rootfs/etc/services.d/alloy/run)",
+      "Bash(chmod +x /Users/cbackstrom/development/hassio-addons/grafana-alloy/rootfs/etc/services.d/alloy/finish)",
+      "Bash(yamllint -d \"{extends: default, rules: {line-length: {max: 120}, indentation: {spaces: 2}}}\" grafana-alloy/config.yaml .github/workflows/check-alloy-release.yml)",
+      "Bash(python3 -m yaml)",
+      "Bash(shellcheck /Users/cbackstrom/development/hassio-addons/grafana-alloy/rootfs/etc/services.d/alloy/run /Users/cbackstrom/development/hassio-addons/grafana-alloy/rootfs/etc/services.d/alloy/finish)"
+    ],
+    "additionalDirectories": [
+      "/Users/cbackstrom/development/hassio-addons/.claude"
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+name: Check Grafana Alloy Release
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch latest Grafana Alloy release
+        id: latest-release
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/grafana/alloy/releases/latest | jq -r '.tag_name')
+          echo "latest=${LATEST}" >> $GITHUB_OUTPUT
+
+      - name: Extract current version from Dockerfile
+        id: current-version
+        run: |
+          CURRENT=$(grep '^ARG ALLOY_VERSION=' grafana-alloy/Dockerfile | cut -d'=' -f2)
+          echo "current=${CURRENT}" >> $GITHUB_OUTPUT
+
+      - name: Compare versions and create PR if newer
+        if: steps.latest-release.outputs.latest != steps.current-version.outputs.current
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: |
+            chore: bump Grafana Alloy to ${{ steps.latest-release.outputs.latest }}
+
+            Updates:
+            - Grafana Alloy binary: ${{ steps.latest-release.outputs.latest }}
+            - App version: ${{ steps.latest-release.outputs.latest }}
+          title: "chore: bump Grafana Alloy to ${{ steps.latest-release.outputs.latest }}"
+          body: |
+            Automated version bump for Grafana Alloy.
+
+            **Current version:** ${{ steps.current-version.outputs.current }}
+            **Latest version:** ${{ steps.latest-release.outputs.latest }}
+
+            Please review the [Grafana Alloy changelog](https://github.com/grafana/alloy/releases/tag/${{ steps.latest-release.outputs.latest }}) before merging.
+          branch: "chore/bump-alloy-${{ steps.latest-release.outputs.latest }}"
+          delete-branch: true
+
+      - name: Update Dockerfile
+        if: steps.latest-release.outputs.latest != steps.current-version.outputs.current
+        run: |
+          sed -i 's/ARG ALLOY_VERSION=.*/ARG ALLOY_VERSION=${{ steps.latest-release.outputs.latest }}/g' grafana-alloy/Dockerfile
+
+      - name: Update config.yaml version
+        if: steps.latest-release.outputs.latest != steps.current-version.outputs.current
+        run: |
+          sed -i 's/^version: .*/version: "${{ steps.latest-release.outputs.latest }}"/g' grafana-alloy/config.yaml
