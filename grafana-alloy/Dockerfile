@@ -1,7 +1,7 @@
 ARG BUILD_FROM=ghcr.io/home-assistant/base:3.23
 FROM ${BUILD_FROM}
 
-ARG ALLOY_VERSION=v1.19.1
+ARG ALLOY_VERSION=v1.19.0
 ARG TARGETARCH
 
 # Map HA arch naming to Grafana's release asset naming and install the pinned binary
