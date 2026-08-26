@@ -1,9 +1,51 @@
 #include <tunables/global>
 
-profile grafana-alloy flags=attach_disconnected,mediate_deleted {
+profile grafana-alloy flags=(attach_disconnected,mediate_deleted) {
   #include <abstractions/base>
 
+  # Capabilities
+  file,
+  signal (send) set=(kill,term,int,hup,cont),
+
+  # S6-Overlay
+  /init ix,
+  /bin/** ix,
+  /usr/bin/** ix,
+  /run/{s6,s6-rc*,service}/** ix,
+  /package/** ix,
+  /command/** ix,
+  /etc/services.d/** rwix,
+  /etc/cont-init.d/** rwix,
+  /etc/cont-finish.d/** rwix,
+  /run/{,**} rwk,
+  /dev/tty rw,
+
+  # Bashio
+  /usr/lib/bashio/** ix,
+  /tmp/** rwk,
+
+  # Access to data
   /data/** rw,
-  network,
-  capability,
+
+  # Start new profile for Alloy
+  /usr/bin/alloy cx -> alloy,
+
+  profile alloy flags=(attach_disconnected,mediate_deleted) {
+    #include <abstractions/base>
+
+    # Receive signals from S6-Overlay
+    signal (receive) peer=*_grafana_alloy,
+
+    # Access to data
+    /data/** rw,
+
+    # Alloy binary and runtime
+    /usr/bin/alloy r,
+    /bin/bash rix,
+    /etc/passwd r,
+    /dev/tty rw,
+
+    # Network access for remote_write
+    network,
+  }
 }
