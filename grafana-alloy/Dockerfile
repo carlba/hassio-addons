@@ -1,4 +1,4 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/base:3.23
+ARG BUILD_FROM=ghcr.io/home-assistant/base:latest
 FROM ${BUILD_FROM}
 
 ARG ALLOY_VERSION=v1.19.0
