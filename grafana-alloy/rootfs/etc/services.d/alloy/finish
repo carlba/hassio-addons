@@ -1,4 +1,0 @@
-#!/usr/bin/with-contenv bashio
-exit_code=$?
-bashio::log.info "Service exited with code ${exit_code}"
-exit ${exit_code}

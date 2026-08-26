@@ -23,5 +23,5 @@ if [ -n "${USER_CONFIG}" ] && [ "${USER_CONFIG}" != "null" ]; then
     printf '%s\n' "${USER_CONFIG}" > "${CONFIG_FILE}"
 fi
 
-bashio::log.info "Starting Grafana Alloy ${ALLOY_VERSION:-}"
+bashio::log.info "Starting Grafana Alloy"
 exec /usr/bin/alloy run "${CONFIG_FILE}" --storage.path=/data/alloy/data

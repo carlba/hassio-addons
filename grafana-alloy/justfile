@@ -1,2 +1,12 @@
-build: 
-  docker buildx build --platform linux/amd64,linux/arm64 -t grafana-alloy:test .
+build-amd64:
+  docker build --build-arg BUILD_ARCH=amd64 -t grafana-alloy:test .
+
+build-arm64:
+  docker build --build-arg BUILD_ARCH=aarch64 -t grafana-alloy:test .
+
+run:
+  mkdir -p /tmp/grafana-alloy-data
+  echo '{"alloy_config":""}' > /tmp/grafana-alloy-data/options.json
+  docker run --rm \
+    -v /tmp/grafana-alloy-data:/data \
+    grafana-alloy:test

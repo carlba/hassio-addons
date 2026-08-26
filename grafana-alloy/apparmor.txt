@@ -7,24 +7,12 @@ profile grafana-alloy flags=(attach_disconnected,mediate_deleted) {
   file,
   signal (send) set=(kill,term,int,hup,cont),
 
-  # S6-Overlay
-  /init ix,
-  /bin/** ix,
-  /usr/bin/** ix,
-  /run/{s6,s6-rc*,service}/** ix,
-  /package/** ix,
-  /command/** ix,
-  /etc/services.d/** rwix,
-  /etc/cont-init.d/** rwix,
-  /etc/cont-finish.d/** rwix,
-  /run/{,**} rwk,
-  /dev/tty rw,
-
   # Bashio
+  /run.sh r,
   /usr/lib/bashio/** ix,
   /tmp/** rwk,
 
-  # Access to data
+  # Access to options.json and other files within your app
   /data/** rw,
 
   # Start new profile for Alloy
@@ -33,19 +21,13 @@ profile grafana-alloy flags=(attach_disconnected,mediate_deleted) {
   profile alloy flags=(attach_disconnected,mediate_deleted) {
     #include <abstractions/base>
 
-    # Receive signals from S6-Overlay
-    signal (receive) peer=*_grafana_alloy,
-
-    # Access to data
+    # Access to options.json and other files within your app
     /data/** rw,
 
-    # Alloy binary and runtime
+    # Access required for service functionality
     /usr/bin/alloy r,
-    /bin/bash rix,
     /etc/passwd r,
-    /dev/tty rw,
 
-    # Network access for remote_write
     network,
   }
 }
