@@ -20,5 +20,3 @@ RUN set -eu; \
     rm -rf /tmp/alloy.zip /tmp/alloy-extract
 
 COPY rootfs /
-
-CMD [ "/init" ]
