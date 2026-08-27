@@ -12,5 +12,8 @@ startup: services
 boot: auto
 options:
   alloy_config: ''
+journald: true
+host_network: true
+host_pid: true
 schema:
   alloy_config: 'str?'
