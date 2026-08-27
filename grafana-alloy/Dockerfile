@@ -1,9 +1,11 @@
-FROM ghcr.io/home-assistant/base:latest
+FROM ghcr.io/home-assistant/base-debian:latest
 
 ARG ALLOY_VERSION=v1.19.0
 ARG BUILD_ARCH
 
-RUN apk add --no-cache unzip gcompat libstdc++
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    unzip ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # Map HA arch naming to Grafana's release asset naming and install the pinned binary
 # directly from the official GitHub release (grafana/alloy).
