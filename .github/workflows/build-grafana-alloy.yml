@@ -48,6 +48,7 @@ jobs:
         with:
           context: ./grafana-alloy
           push: true
+          platforms: linux/${{ matrix.build_arch }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ matrix.arch }}-addon-grafana-alloy:${{ steps.version.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/${{ matrix.arch }}-addon-grafana-alloy:latest
