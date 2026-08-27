@@ -49,7 +49,8 @@
       "Bash(time docker stop alloy-final)",
       "Bash(curl -s https://api.github.com/repos/grafana/alloy/releases/tag/v1.19.0)",
       "Bash(curl -s https://api.github.com/repos/grafana/alloy/releases/tags/v1.19.0)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git config *)"
     ],
     "additionalDirectories": [
       "/Users/cbackstrom/development/hassio-addons/.claude"
