@@ -21,7 +21,7 @@ jobs:
           - arch: amd64
             build_arch: amd64
           - arch: aarch64
-            build_arch: arm64
+            build_arch: aarch64
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
