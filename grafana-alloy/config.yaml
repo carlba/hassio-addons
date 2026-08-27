@@ -1,5 +1,5 @@
 name: Grafana Alloy
-version: "1.19.1"
+version: "1.19.2"
 slug: grafana_alloy
 description: Runs Grafana Alloy to collect and forward telemetry via Prometheus remote_write
 url: https://github.com/carlba/hassio-addons/tree/main/grafana-alloy

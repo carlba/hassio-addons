@@ -25,5 +25,5 @@ fi
 
 bashio::log.info "Starting Grafana Alloy"
 bashio::log.info "Testing alloy binary..."
-/usr/bin/alloy version || bashio::log.error "Alloy version check failed"
+/usr/bin/alloy --version || bashio::log.error "Alloy version check failed"
 exec /usr/bin/alloy run "${CONFIG_FILE}" --storage.path=/data/alloy/data
