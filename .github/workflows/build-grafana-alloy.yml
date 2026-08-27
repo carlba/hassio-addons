@@ -29,7 +29,7 @@ jobs:
       - name: Extract version from config.yaml
         id: version
         run: |
-          VERSION=$(grep '^version:' grafana-alloy/config.yaml | sed 's/.*"\(.*\)"/\1/')
+          VERSION=$(grep '^version:' grafana-alloy/config.yaml | sed "s/version: *['\"]//g" | sed "s/['\"].*//" | tr -d ' ')
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "Addon version: ${VERSION}"
 
@@ -66,7 +66,7 @@ jobs:
       - name: Extract version from config.yaml
         id: version
         run: |
-          VERSION=$(grep '^version:' grafana-alloy/config.yaml | sed 's/.*"\(.*\)"/\1/')
+          VERSION=$(grep '^version:' grafana-alloy/config.yaml | sed "s/version: *['\"]//g" | sed "s/['\"].*//" | tr -d ' ')
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Create release notes
