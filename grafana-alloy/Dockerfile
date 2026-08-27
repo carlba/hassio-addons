@@ -1,6 +1,6 @@
 FROM ghcr.io/home-assistant/base-debian:latest
 
-ARG ALLOY_VERSION=v1.19.0
+ARG ALLOY_VERSION=v1.19.2
 ARG BUILD_ARCH
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
