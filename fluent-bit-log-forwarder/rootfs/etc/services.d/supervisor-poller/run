@@ -1,45 +1,69 @@
 #!/usr/bin/with-contenv bashio
 # ==============================================================================
-# Poll the Supervisor API on an interval and append new log lines to the
-# files the sibling `fluent-bit` service tails.
+# Stream logs from the Supervisor API's /follow endpoints straight into the
+# files the sibling `fluent-bit` service tails, one long-lived `curl` per
+# source. Any stream that drops (Supervisor restart, connection reset, etc.)
+# is restarted on its own so one source's failure doesn't affect the others.
 # s6-overlay docs: https://github.com/just-containers/s6-overlay
 # ==============================================================================
 
-declare collect_core_log
-declare collect_host_log
-declare collect_supervisor_log
-declare collect_addon_logs
-declare poll_interval_seconds
-declare log_dir
+declare -A pid_source
 
-log_dir="/var/log/fluent-bit-src"
+readonly SUPERVISOR_API="http://supervisor"
+readonly AUTH_HEADER="Authorization: Bearer ${SUPERVISOR_TOKEN}"
+readonly log_dir="/var/log/fluent-bit-src"
+
 mkdir -p "${log_dir}"
 
 collect_core_log=$(bashio::config 'collect_core_log')
 collect_host_log=$(bashio::config 'collect_host_log')
 collect_supervisor_log=$(bashio::config 'collect_supervisor_log')
 collect_addon_logs=$(bashio::config 'collect_addon_logs')
-poll_interval_seconds=$(bashio::config 'poll_interval_seconds')
 
-bashio::var.true "${collect_core_log}" && touch "${log_dir}/core.log"
-bashio::var.true "${collect_host_log}" && touch "${log_dir}/host.log"
-bashio::var.true "${collect_supervisor_log}" && touch "${log_dir}/supervisor.log"
-bashio::var.true "${collect_addon_logs}" && touch "${log_dir}/addon.log"
+start_stream() {
+    local api_path="$1" out_file="$2" source_name="$3"
+    touch "${out_file}"
+    curl -sN -H "${AUTH_HEADER}" "${SUPERVISOR_API}${api_path}" >> "${out_file}" &
+    pid_source[$!]="${api_path}|${out_file}|${source_name}"
+    bashio::log.info "Streaming ${source_name} log (${api_path})..."
+}
 
-bashio::log.info "Starting Supervisor API poller (interval: ${poll_interval_seconds}s)..."
+start_addon_stream() {
+    local slug="$1"
+    local out_file="${log_dir}/addon.log"
+    touch "${out_file}"
+    curl -sN -H "${AUTH_HEADER}" "${SUPERVISOR_API}/addons/${slug}/logs/follow" \
+        | sed -u "s/^/${slug}: /" >> "${out_file}" &
+    pid_source[$!]="/addons/${slug}/logs/follow|${out_file}|addon-${slug}"
+    bashio::log.info "Streaming addon-${slug} log..."
+}
+
+bashio::var.true "${collect_core_log}" && start_stream "/core/logs/follow" "${log_dir}/core.log" "core"
+bashio::var.true "${collect_host_log}" && start_stream "/host/logs/follow" "${log_dir}/host.log" "host"
+bashio::var.true "${collect_supervisor_log}" && start_stream "/supervisor/logs/follow" "${log_dir}/supervisor.log" "supervisor"
+
+if bashio::var.true "${collect_addon_logs}"; then
+    touch "${log_dir}/addon.log"
+    slugs=$(curl -s -H "${AUTH_HEADER}" "${SUPERVISOR_API}/addons" | jq -r '.data.addons[].slug')
+    for slug in ${slugs}; do
+        start_addon_stream "${slug}"
+    done
+fi
+
+bashio::log.info "All log streams started, supervising..."
 
 while true; do
-    if bashio::var.true "${collect_core_log}"; then
-        /etc/fluent-bit/scripts/poll-source.sh /core/logs/latest core >> "${log_dir}/core.log"
-    fi
-    if bashio::var.true "${collect_host_log}"; then
-        /etc/fluent-bit/scripts/poll-source.sh /host/logs host >> "${log_dir}/host.log"
-    fi
-    if bashio::var.true "${collect_supervisor_log}"; then
-        /etc/fluent-bit/scripts/poll-source.sh /host/logs supervisor >> "${log_dir}/supervisor.log"
-    fi
-    if bashio::var.true "${collect_addon_logs}"; then
-        /etc/fluent-bit/scripts/poll-addon-logs.sh >> "${log_dir}/addon.log"
-    fi
-    sleep "${poll_interval_seconds}"
+    wait -n
+    for pid in "${!pid_source[@]}"; do
+        if ! kill -0 "${pid}" 2>/dev/null; then
+            IFS='|' read -r api_path out_file source_name <<< "${pid_source[${pid}]}"
+            unset 'pid_source[${pid}]'
+            bashio::log.warning "Log stream ${source_name} (${api_path}) exited, restarting..."
+            if [[ "${source_name}" == addon-* ]]; then
+                start_addon_stream "${source_name#addon-}"
+            else
+                start_stream "${api_path}" "${out_file}" "${source_name}"
+            fi
+        fi
+    done
 done

@@ -12,23 +12,28 @@ and forwards logs to a Grafana Loki instance:
 - The container logs of every other installed app
 
 Logs are read from the [Supervisor API](https://developers.home-assistant.io/docs/api/supervisor/endpoints/)
-on a configurable poll interval by a `supervisor-poller` service, written to
-local files, and tailed from there by Fluent Bit before being pushed to
-Loki via its `loki` output plugin. A persisted line-count cursor per source
-avoids re-shipping the same lines on every poll or after a restart.
+by a `supervisor-poller` service, which opens one long-lived streaming
+connection per source against that source's `/logs/follow` endpoint and
+appends new lines straight into local files as they arrive. Fluent Bit
+tails those files and pushes new content to Loki via its `loki` output
+plugin. If a stream drops (Supervisor restart, connection reset, etc.),
+`supervisor-poller` restarts only that stream — other sources are
+unaffected.
 
-Fluent Bit's `exec` input (a poll-and-run-a-command plugin) was deliberately
-not used to reach the Supervisor API directly: it is compiled out of
-Fluent Bit's official production images (they ship without `/bin/sh`) and
-its own docs flag it as a shell-injection risk when command output includes
-untrusted content, which log lines are. Polling happens in a plain shell
-loop instead, and Fluent Bit only ever reads local files via `tail`.
+Fluent Bit's `exec` input (a run-a-command plugin) was deliberately not
+used to reach the Supervisor API directly: it is compiled out of Fluent
+Bit's official production images (they ship without `/bin/sh`) and its own
+docs flag it as a shell-injection risk when command output includes
+untrusted content, which log lines are. Streaming happens via background
+`curl` processes instead, and Fluent Bit only ever reads local files via
+`tail`.
 
 **Startup note:** on start, Fluent Bit reads any content already present in
 each source file (verified via `tail`'s SQLite offset database, which
-persists across restarts so already-shipped lines are never re-sent). New
-content becomes available to tail once the `supervisor-poller` service
-writes it, bounded by `poll_interval_seconds`.
+persists across restarts so already-shipped lines are never re-sent). The
+installed-app list for `collect_addon_logs` is fetched once when
+`supervisor-poller` starts; an app installed afterward is picked up on the
+next app restart.
 
 ## Configuration
 
@@ -70,24 +75,23 @@ to reach `home-assistant.log`.
 
 ### Option: `collect_host_log`
 
-Forward the Host/OS journal log via `GET /host/logs` on the Supervisor API.
+Forward the Host/OS journal log via `GET /host/logs/follow` on the
+Supervisor API.
 
 ### Option: `collect_supervisor_log`
 
-Forward the Supervisor log. There is no separate Supervisor log endpoint —
-Supervisor's own log stream lives in the same Host journal — so this reads
-from `GET /host/logs` as well, but ships as its own tag/label so it can be
-filtered independently in Grafana.
+Forward the Supervisor log via `GET /supervisor/logs/follow` on the
+Supervisor API.
 
 ### Option: `collect_addon_logs`
 
 Forward the container logs of every other installed app, discovered via
-`GET /addons` and fetched per-app via `GET /addons/<slug>/logs`.
+`GET /addons` and streamed per-app via `GET /addons/<slug>/logs/follow`.
 
 ### Option: `poll_interval_seconds`
 
-How often, in seconds, to poll the Supervisor API for new log lines.
-Must be between 5 and 300.
+Unused — log sources are streamed rather than polled. Kept for backward
+compatibility with existing configurations.
 
 ### Option: `logs_timezone`
 
