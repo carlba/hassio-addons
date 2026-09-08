@@ -10,60 +10,38 @@
 # command output such as log content.
 # ==============================================================================
 
-declare loki_url
-declare loki_tenant_id
-declare collect_core_log
-declare collect_host_log
-declare collect_supervisor_log
-declare collect_addon_logs
 declare loki_host
 declare loki_port
 declare loki_tls
 declare loki_uri
-declare loki_authority
-declare loki_userinfo
+declare loki_tenant_id
 declare loki_user
 declare loki_password
-declare loki_hostport
+declare collect_core_log
+declare collect_host_log
+declare collect_supervisor_log
+declare collect_addon_logs
 declare config_file
 declare log_dir
 
 log_dir="/var/log/fluent-bit-src"
 
-loki_url=$(bashio::config 'loki_url')
+loki_host=$(bashio::config 'loki_host')
+loki_port=$(bashio::config 'loki_port')
+loki_uri=$(bashio::config 'loki_uri')
 loki_tenant_id=$(bashio::config 'loki_tenant_id')
+loki_user=$(bashio::config 'loki_user')
+loki_password=$(bashio::config 'loki_password')
 collect_core_log=$(bashio::config 'collect_core_log')
 collect_host_log=$(bashio::config 'collect_host_log')
 collect_supervisor_log=$(bashio::config 'collect_supervisor_log')
 collect_addon_logs=$(bashio::config 'collect_addon_logs')
 
-# Split loki_url into Host/Port/Tls/Uri (and optional user:password@) for
-# the loki output plugin, e.g. https://user:pass@logs-prod.grafana.net/loki/api/v1/push
-loki_authority=$(echo "${loki_url}" | sed -E 's#^[a-z]+://##; s#/.*$##')
-if [[ "${loki_authority}" == *@* ]]; then
-    loki_userinfo="${loki_authority%%@*}"
-    loki_user="${loki_userinfo%%:*}"
-    loki_password="${loki_userinfo#*:}"
-else
-    loki_user=""
-    loki_password=""
-fi
-loki_hostport="${loki_authority#*@}"
-loki_host="${loki_hostport%%:*}"
-if [[ "${loki_hostport}" == *:* ]]; then
-    loki_port="${loki_hostport#*:}"
-else
-    loki_port=""
-fi
-if [[ "${loki_url}" == https://* ]]; then
+if bashio::var.true "$(bashio::config 'loki_tls')"; then
     loki_tls="on"
-    loki_port="${loki_port:-443}"
 else
     loki_tls="off"
-    loki_port="${loki_port:-3100}"
 fi
-loki_uri=$(echo "${loki_url}" | sed -E 's#^[a-z]+://[^/]+##')
-loki_uri="${loki_uri:-/loki/api/v1/push}"
 
 config_file="/etc/fluent-bit/fluent-bit.conf"
 

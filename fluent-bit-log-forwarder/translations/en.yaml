@@ -1,11 +1,31 @@
 configuration:
-  loki_url:
-    name: Loki URL
-    description: The full URL of your Grafana Loki instance, including scheme and port (e.g. http://loki:3100). For hosted Loki requiring auth, embed credentials as https://user:password@host/loki/api/v1/push.
+  loki_host:
+    name: Loki host
+    description: Hostname of your Grafana Loki instance (e.g. loki or logs-prod-006.grafana.net).
+
+  loki_port:
+    name: Loki port
+    description: Port of your Grafana Loki instance (e.g. 3100 for a local instance, 443 for most hosted instances).
+
+  loki_tls:
+    name: Loki TLS
+    description: Whether to connect to Loki over TLS. Enable for hosted Loki instances such as Grafana Cloud.
+
+  loki_uri:
+    name: Loki push URI
+    description: Path of the Loki push API (e.g. /loki/api/v1/push).
 
   loki_tenant_id:
     name: Loki tenant ID
     description: Optional Loki tenant (X-Scope-OrgID) to send with each request. Leave empty if your Loki instance is single-tenant.
+
+  loki_user:
+    name: Loki username
+    description: Optional HTTP basic auth username, required by hosted Loki instances such as Grafana Cloud (the instance ID). Leave empty if not required.
+
+  loki_password:
+    name: Loki password
+    description: Optional HTTP basic auth password, required by hosted Loki instances such as Grafana Cloud (an API key). Leave empty if not required.
 
   collect_core_log:
     name: Collect Core log
