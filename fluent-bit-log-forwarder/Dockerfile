@@ -2,7 +2,7 @@
 ARG FLUENT_BIT_VERSION=3.2.5
 ARG BUILD_FROM=ghcr.io/home-assistant/base:3.23
 
-FROM fluent/fluent-bit:${FLUENT_BIT_VERSION} AS fluent-bit
+FROM --platform=$TARGETPLATFORM fluent/fluent-bit:${FLUENT_BIT_VERSION} AS fluent-bit
 
 FROM ${BUILD_FROM}
 
@@ -12,7 +12,11 @@ COPY --from=fluent-bit /fluent-bit/bin/fluent-bit /usr/bin/fluent-bit
 RUN \
     apk add --no-cache \
         curl \
-        jq
+        jq \
+        file \
+    && file /usr/bin/fluent-bit \
+    && /usr/bin/fluent-bit --version \
+    && apk del file
 
 # Copy root filesystem
 COPY rootfs /

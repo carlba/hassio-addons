@@ -1,4 +1,10 @@
 <!-- https://developers.home-assistant.io/docs/apps/presentation#keeping-a-changelog -->
+## 0.2.1
+
+- Fixed Fluent Bit binary being copied for the wrong architecture during
+  multi-arch builds, causing `cannot execute: required file not found` at
+  startup.
+
 ## 0.2.0
 
 - **Breaking:** replaced `loki_url` with `loki_host`, `loki_port`, `loki_tls`,
