@@ -1,9 +1,9 @@
 # https://developers.home-assistant.io/docs/apps/configuration#app-dockerfile
 ARG FLUENT_BIT_VERSION=3.2.5
+ARG BUILD_FROM=ghcr.io/home-assistant/base:3.23
 
 FROM fluent/fluent-bit:${FLUENT_BIT_VERSION} AS fluent-bit
 
-ARG BUILD_FROM=ghcr.io/home-assistant/base:3.23
 FROM ${BUILD_FROM}
 
 # Statically-linked Fluent Bit binary, pinned via FLUENT_BIT_VERSION above
