@@ -1,0 +1,163 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Start the Fluent Bit log forwarder service
+# s6-overlay docs: https://github.com/just-containers/s6-overlay
+#
+# Log content reaches Fluent Bit via the `tail` input, reading files that the
+# sibling `supervisor-poller` service maintains. `exec` is deliberately not
+# used here: Fluent Bit's own docs note it is compiled out of production
+# images (needs /bin/sh) and warn it is a shell-injection risk for untrusted
+# command output such as log content.
+# ==============================================================================
+
+declare loki_url
+declare loki_tenant_id
+declare collect_core_log
+declare collect_host_log
+declare collect_supervisor_log
+declare collect_addon_logs
+declare loki_host
+declare loki_port
+declare loki_tls
+declare loki_uri
+declare config_file
+declare log_dir
+
+log_dir="/var/log/fluent-bit-src"
+
+loki_url=$(bashio::config 'loki_url')
+loki_tenant_id=$(bashio::config 'loki_tenant_id')
+collect_core_log=$(bashio::config 'collect_core_log')
+collect_host_log=$(bashio::config 'collect_host_log')
+collect_supervisor_log=$(bashio::config 'collect_supervisor_log')
+collect_addon_logs=$(bashio::config 'collect_addon_logs')
+
+# Split loki_url into Host/Port/Tls/Uri for the loki output plugin
+loki_host=$(echo "${loki_url}" | sed -E 's#^[a-z]+://##; s#[:/].*$##')
+loki_port=$(echo "${loki_url}" | sed -E 's#^[a-z]+://[^:/]+##; s#/.*$##; s#^:##')
+if [[ "${loki_url}" == https://* ]]; then
+    loki_tls="on"
+    loki_port="${loki_port:-443}"
+else
+    loki_tls="off"
+    loki_port="${loki_port:-3100}"
+fi
+loki_uri=$(echo "${loki_url}" | sed -E 's#^[a-z]+://[^/]+##')
+loki_uri="${loki_uri:-/loki/api/v1/push}"
+
+config_file="/etc/fluent-bit/fluent-bit.conf"
+
+bashio::log.info "Rendering Fluent Bit configuration..."
+
+{
+    cat <<EOF
+[SERVICE]
+    Flush        5
+    Log_Level    info
+    Parsers_File parsers.conf
+    HTTP_Server  Off
+
+EOF
+
+    if bashio::var.true "${collect_core_log}"; then
+        cat <<EOF
+[INPUT]
+    Name           tail
+    Tag            ha.core
+    Path           ${log_dir}/core.log
+    DB             /data/tail-core.db
+    Read_from_Head true
+
+EOF
+    fi
+
+    if bashio::var.true "${collect_host_log}"; then
+        cat <<EOF
+[INPUT]
+    Name           tail
+    Tag            ha.host
+    Path           ${log_dir}/host.log
+    DB             /data/tail-host.db
+    Read_from_Head true
+
+EOF
+    fi
+
+    if bashio::var.true "${collect_supervisor_log}"; then
+        cat <<EOF
+[INPUT]
+    Name           tail
+    Tag            ha.supervisor
+    Path           ${log_dir}/supervisor.log
+    DB             /data/tail-supervisor.db
+    Read_from_Head true
+
+EOF
+    fi
+
+    if bashio::var.true "${collect_addon_logs}"; then
+        cat <<EOF
+[INPUT]
+    Name           tail
+    Tag            ha.addon
+    Path           ${log_dir}/addon.log
+    DB             /data/tail-addon.db
+    Read_from_Head true
+
+EOF
+    fi
+
+    cat <<EOF
+[FILTER]
+    Name    modify
+    Match   ha.core
+    Add     job ha_core
+    Add     source core
+
+[FILTER]
+    Name    parser
+    Match   ha.core
+    Key_Name log
+    Parser  ha_log_line
+    Reserve_Data On
+
+[FILTER]
+    Name    modify
+    Match   ha.host
+    Add     job ha_host
+    Add     source host
+
+[FILTER]
+    Name    modify
+    Match   ha.supervisor
+    Add     job ha_supervisor
+    Add     source supervisor
+
+[FILTER]
+    Name    modify
+    Match   ha.addon
+    Add     job ha_addon
+    Add     source addon
+
+[OUTPUT]
+    Name         loki
+    Match        *
+    Host         ${loki_host}
+    Port         ${loki_port}
+    Tls          ${loki_tls}
+    Uri          ${loki_uri}
+EOF
+
+    if [[ -n "${loki_tenant_id}" ]]; then
+        echo "    Tenant_ID    ${loki_tenant_id}"
+    fi
+
+    cat <<EOF
+    Labels       job=\$job, source=\$source, level=\$level
+    Line_Format  json
+    Auto_Kubernetes_Labels Off
+EOF
+} > "${config_file}"
+
+bashio::log.info "Starting Fluent Bit..."
+exec fluent-bit -c "${config_file}"

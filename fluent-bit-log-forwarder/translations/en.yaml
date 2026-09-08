@@ -1,0 +1,28 @@
+configuration:
+  loki_url:
+    name: Loki URL
+    description: The full URL of your Grafana Loki instance, including scheme and port (e.g. http://loki:3100).
+
+  loki_tenant_id:
+    name: Loki tenant ID
+    description: Optional Loki tenant (X-Scope-OrgID) to send with each request. Leave empty if your Loki instance is single-tenant.
+
+  collect_core_log:
+    name: Collect Core log
+    description: Forward the Home Assistant Core log (home-assistant.log) to Loki.
+
+  collect_host_log:
+    name: Collect Host log
+    description: Forward the Host/OS journal log to Loki.
+
+  collect_supervisor_log:
+    name: Collect Supervisor log
+    description: Forward the Supervisor log to Loki. Supervisor log entries live in the same journal as the Host log, so this is a separate label rather than a separate source.
+
+  collect_addon_logs:
+    name: Collect app logs
+    description: Forward the container logs of every other installed app to Loki.
+
+  poll_interval_seconds:
+    name: Poll interval (seconds)
+    description: How often, in seconds, to poll the Supervisor API for new log lines.

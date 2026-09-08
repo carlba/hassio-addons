@@ -1,0 +1,45 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Poll the Supervisor API on an interval and append new log lines to the
+# files the sibling `fluent-bit` service tails.
+# s6-overlay docs: https://github.com/just-containers/s6-overlay
+# ==============================================================================
+
+declare collect_core_log
+declare collect_host_log
+declare collect_supervisor_log
+declare collect_addon_logs
+declare poll_interval_seconds
+declare log_dir
+
+log_dir="/var/log/fluent-bit-src"
+mkdir -p "${log_dir}"
+
+collect_core_log=$(bashio::config 'collect_core_log')
+collect_host_log=$(bashio::config 'collect_host_log')
+collect_supervisor_log=$(bashio::config 'collect_supervisor_log')
+collect_addon_logs=$(bashio::config 'collect_addon_logs')
+poll_interval_seconds=$(bashio::config 'poll_interval_seconds')
+
+bashio::var.true "${collect_core_log}" && touch "${log_dir}/core.log"
+bashio::var.true "${collect_host_log}" && touch "${log_dir}/host.log"
+bashio::var.true "${collect_supervisor_log}" && touch "${log_dir}/supervisor.log"
+bashio::var.true "${collect_addon_logs}" && touch "${log_dir}/addon.log"
+
+bashio::log.info "Starting Supervisor API poller (interval: ${poll_interval_seconds}s)..."
+
+while true; do
+    if bashio::var.true "${collect_core_log}"; then
+        /etc/fluent-bit/scripts/poll-source.sh /core/logs/latest core >> "${log_dir}/core.log"
+    fi
+    if bashio::var.true "${collect_host_log}"; then
+        /etc/fluent-bit/scripts/poll-source.sh /host/logs/latest host >> "${log_dir}/host.log"
+    fi
+    if bashio::var.true "${collect_supervisor_log}"; then
+        /etc/fluent-bit/scripts/poll-source.sh /host/logs/latest supervisor >> "${log_dir}/supervisor.log"
+    fi
+    if bashio::var.true "${collect_addon_logs}"; then
+        /etc/fluent-bit/scripts/poll-addon-logs.sh >> "${log_dir}/addon.log"
+    fi
+    sleep "${poll_interval_seconds}"
+done
