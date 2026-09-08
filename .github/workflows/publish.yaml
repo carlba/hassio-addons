@@ -59,7 +59,7 @@ jobs:
           arch: ${{ matrix.arch }}
           context: ${{ env.APP_DIR }}
           build-args: |
-            BUILD_FROM=ghcr.io/home-assistant/base-debian:bookworm
+            BUILD_FROM=ghcr.io/home-assistant/base-debian:trixie
           container-registry-password: ${{ secrets.GITHUB_TOKEN }}
           image: ${{ matrix.image }}
           image-tags: |

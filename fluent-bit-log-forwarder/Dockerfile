@@ -1,8 +1,10 @@
 # https://developers.home-assistant.io/docs/apps/configuration#app-dockerfile
-ARG FLUENT_BIT_VERSION=3.2.5
+ARG FLUENT_BIT_VERSION=5.1.2
 # Debian-based: upstream Fluent Bit ships a glibc-dynamically-linked binary,
-# which isn't compatible with the musl-based Alpine HA base images.
-ARG BUILD_FROM=ghcr.io/home-assistant/base-debian:bookworm
+# which isn't compatible with the musl-based Alpine HA base images. Trixie
+# (Debian 13) is required because this Fluent Bit version needs glibc 2.38+,
+# newer than bookworm's 2.36.
+ARG BUILD_FROM=ghcr.io/home-assistant/base-debian:trixie
 
 FROM fluent/fluent-bit:${FLUENT_BIT_VERSION} AS fluent-bit
 

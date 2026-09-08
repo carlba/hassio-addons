@@ -1,4 +1,12 @@
 <!-- https://developers.home-assistant.io/docs/apps/presentation#keeping-a-changelog -->
+## 0.2.3
+
+- Fixed a segfault (exit code 139) in Fluent Bit when using a TLS-enabled
+  Loki output with HTTP basic auth, surfaced by the 0.2.2 diagnostic
+  logging. Upgraded the pinned Fluent Bit version from 3.2.5 to 5.1.2,
+  which requires switching the base image from Debian bookworm (glibc
+  2.36) to trixie (glibc 2.40+).
+
 ## 0.2.2
 
 - Fluent Bit is now started without `exec`, and its exit code is logged
