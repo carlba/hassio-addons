@@ -37,6 +37,10 @@ writes it, bounded by `poll_interval_seconds`.
 The full URL of your Grafana Loki instance, including scheme and port, e.g.
 `http://loki:3100`. Use `https://` if your Loki instance requires TLS.
 
+For hosted Loki (e.g. Grafana Cloud) that requires HTTP basic auth, include
+the credentials directly in the URL:
+`https://<user>:<api-key>@<host>/loki/api/v1/push`.
+
 ### Option: `loki_tenant_id`
 
 Optional Loki tenant (`X-Scope-OrgID`) to send with each push request.

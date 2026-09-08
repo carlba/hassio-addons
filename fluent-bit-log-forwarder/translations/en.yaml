@@ -1,7 +1,7 @@
 configuration:
   loki_url:
     name: Loki URL
-    description: The full URL of your Grafana Loki instance, including scheme and port (e.g. http://loki:3100).
+    description: The full URL of your Grafana Loki instance, including scheme and port (e.g. http://loki:3100). For hosted Loki requiring auth, embed credentials as https://user:password@host/loki/api/v1/push.
 
   loki_tenant_id:
     name: Loki tenant ID

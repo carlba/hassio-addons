@@ -20,6 +20,11 @@ declare loki_host
 declare loki_port
 declare loki_tls
 declare loki_uri
+declare loki_authority
+declare loki_userinfo
+declare loki_user
+declare loki_password
+declare loki_hostport
 declare config_file
 declare log_dir
 
@@ -32,9 +37,24 @@ collect_host_log=$(bashio::config 'collect_host_log')
 collect_supervisor_log=$(bashio::config 'collect_supervisor_log')
 collect_addon_logs=$(bashio::config 'collect_addon_logs')
 
-# Split loki_url into Host/Port/Tls/Uri for the loki output plugin
-loki_host=$(echo "${loki_url}" | sed -E 's#^[a-z]+://##; s#[:/].*$##')
-loki_port=$(echo "${loki_url}" | sed -E 's#^[a-z]+://[^:/]+##; s#/.*$##; s#^:##')
+# Split loki_url into Host/Port/Tls/Uri (and optional user:password@) for
+# the loki output plugin, e.g. https://user:pass@logs-prod.grafana.net/loki/api/v1/push
+loki_authority=$(echo "${loki_url}" | sed -E 's#^[a-z]+://##; s#/.*$##')
+if [[ "${loki_authority}" == *@* ]]; then
+    loki_userinfo="${loki_authority%%@*}"
+    loki_user="${loki_userinfo%%:*}"
+    loki_password="${loki_userinfo#*:}"
+else
+    loki_user=""
+    loki_password=""
+fi
+loki_hostport="${loki_authority#*@}"
+loki_host="${loki_hostport%%:*}"
+if [[ "${loki_hostport}" == *:* ]]; then
+    loki_port="${loki_hostport#*:}"
+else
+    loki_port=""
+fi
 if [[ "${loki_url}" == https://* ]]; then
     loki_tls="on"
     loki_port="${loki_port:-443}"
@@ -150,6 +170,11 @@ EOF
 
     if [[ -n "${loki_tenant_id}" ]]; then
         echo "    Tenant_ID    ${loki_tenant_id}"
+    fi
+
+    if [[ -n "${loki_user}" ]]; then
+        echo "    http_user    ${loki_user}"
+        echo "    http_passwd  ${loki_password}"
     fi
 
     cat <<EOF
