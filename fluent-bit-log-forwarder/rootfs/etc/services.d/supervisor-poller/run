@@ -33,10 +33,10 @@ while true; do
         /etc/fluent-bit/scripts/poll-source.sh /core/logs/latest core >> "${log_dir}/core.log"
     fi
     if bashio::var.true "${collect_host_log}"; then
-        /etc/fluent-bit/scripts/poll-source.sh /host/logs/latest host >> "${log_dir}/host.log"
+        /etc/fluent-bit/scripts/poll-source.sh /host/logs host >> "${log_dir}/host.log"
     fi
     if bashio::var.true "${collect_supervisor_log}"; then
-        /etc/fluent-bit/scripts/poll-source.sh /host/logs/latest supervisor >> "${log_dir}/supervisor.log"
+        /etc/fluent-bit/scripts/poll-source.sh /host/logs supervisor >> "${log_dir}/supervisor.log"
     fi
     if bashio::var.true "${collect_addon_logs}"; then
         /etc/fluent-bit/scripts/poll-addon-logs.sh >> "${log_dir}/addon.log"
