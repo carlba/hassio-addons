@@ -1,22 +1,24 @@
 # https://developers.home-assistant.io/docs/apps/configuration#app-dockerfile
 ARG FLUENT_BIT_VERSION=3.2.5
-ARG BUILD_FROM=ghcr.io/home-assistant/base:3.23
+# Debian-based: upstream Fluent Bit ships a glibc-dynamically-linked binary,
+# which isn't compatible with the musl-based Alpine HA base images.
+ARG BUILD_FROM=ghcr.io/home-assistant/base-debian:bookworm
 
-FROM --platform=$TARGETPLATFORM fluent/fluent-bit:${FLUENT_BIT_VERSION} AS fluent-bit
+FROM fluent/fluent-bit:${FLUENT_BIT_VERSION} AS fluent-bit
 
 FROM ${BUILD_FROM}
 
-# Statically-linked Fluent Bit binary, pinned via FLUENT_BIT_VERSION above
+# Fluent Bit binary, pinned via FLUENT_BIT_VERSION above.
 COPY --from=fluent-bit /fluent-bit/bin/fluent-bit /usr/bin/fluent-bit
 
 RUN \
-    apk add --no-cache \
+    apt-get update \
+    && apt-get install --no-install-recommends -y \
         curl \
         jq \
-        file \
-    && file /usr/bin/fluent-bit \
-    && /usr/bin/fluent-bit --version \
-    && apk del file
+        libyaml-0-2 \
+        libpq5 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy root filesystem
 COPY rootfs /

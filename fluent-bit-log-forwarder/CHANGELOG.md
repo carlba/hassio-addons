@@ -1,9 +1,10 @@
 <!-- https://developers.home-assistant.io/docs/apps/presentation#keeping-a-changelog -->
 ## 0.2.1
 
-- Fixed Fluent Bit binary being copied for the wrong architecture during
-  multi-arch builds, causing `cannot execute: required file not found` at
-  startup.
+- Fixed the Fluent Bit binary failing to start (`cannot execute: required
+  file not found`). Upstream Fluent Bit ships a glibc-dynamically-linked
+  binary, which is incompatible with the musl-based Alpine HA base image;
+  the app now builds on the Debian-based HA base image instead.
 
 ## 0.2.0
 
