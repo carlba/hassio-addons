@@ -68,7 +68,7 @@ cat <<EOF > "${parsers_file}"
 [PARSER]
     Name        ha_log_line
     Format      regex
-    Regex       ^(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) (?<level>[A-Z]+) \((?<thread>[^)]*)\) \[(?<component>[^\]]*)\] (?<message>.*)\$
+    Regex       ^(?:\x1b\[\d+m)?(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) (?<level>[A-Z]+) \((?<thread>[^)]*)\) \[(?<component>[^\]]*)\] (?<message>.*?)(?:\x1b\[0m)?\$
     Time_Key    time
     Time_Format %Y-%m-%d %H:%M:%S.%L
     Time_Offset ${core_log_time_offset}
@@ -147,16 +147,37 @@ EOF
     Reserve_Data On
 
 [FILTER]
+    Name    parser
+    Match   ha.host
+    Key_Name log
+    Parser  ha_log_line
+    Reserve_Data On
+
+[FILTER]
     Name    modify
     Match   ha.host
     Add     job ha_host
     Add     source host
 
 [FILTER]
+    Name    parser
+    Match   ha.supervisor
+    Key_Name log
+    Parser  ha_log_line
+    Reserve_Data On
+
+[FILTER]
     Name    modify
     Match   ha.supervisor
     Add     job ha_supervisor
     Add     source supervisor
+
+[FILTER]
+    Name    parser
+    Match   ha.addon
+    Key_Name log
+    Parser  ha_log_line
+    Reserve_Data On
 
 [FILTER]
     Name    modify
