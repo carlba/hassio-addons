@@ -163,4 +163,7 @@ EOF
 } > "${config_file}"
 
 bashio::log.info "Starting Fluent Bit..."
-exec fluent-bit -c "${config_file}"
+fluent-bit -c "${config_file}"
+exit_code=$?
+bashio::log.warning "Fluent Bit exited with code ${exit_code}"
+exit "${exit_code}"

@@ -1,4 +1,10 @@
 <!-- https://developers.home-assistant.io/docs/apps/presentation#keeping-a-changelog -->
+## 0.2.2
+
+- Fluent Bit is now started without `exec`, and its exit code is logged
+  explicitly, so a silent crash-restart loop shows the real exit code
+  (and signal, if any) in the app log instead of no information at all.
+
 ## 0.2.1
 
 - Fixed the Fluent Bit binary failing to start (`cannot execute: required
