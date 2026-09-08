@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "fluent-bit-log-forwarder/**"
+      - 'fluent-bit-log-forwarder/**'
   workflow_dispatch:
 
 env:
@@ -29,7 +29,7 @@ jobs:
       - name: Read app version
         id: version
         run: |
-          version=$(grep '^version:' "${APP_DIR}/config.yaml" | sed 's/version: *"\(.*\)"/\1/')
+          version=$(yq -r '.version' "${APP_DIR}/config.yaml")
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Get build matrix
@@ -65,7 +65,7 @@ jobs:
           image-tags: |
             ${{ needs.init.outputs.version }}
             latest
-          push: "true"
+          push: 'true'
           version: ${{ needs.init.outputs.version }}
 
   manifest:
