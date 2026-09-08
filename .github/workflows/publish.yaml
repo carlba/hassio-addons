@@ -58,6 +58,8 @@ jobs:
         with:
           arch: ${{ matrix.arch }}
           context: ${{ env.APP_DIR }}
+          build-args: |
+            BUILD_FROM=ghcr.io/home-assistant/base:3.23
           container-registry-password: ${{ secrets.GITHUB_TOKEN }}
           image: ${{ matrix.image }}
           image-tags: |
