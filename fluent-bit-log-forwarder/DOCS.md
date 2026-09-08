@@ -89,6 +89,18 @@ Forward the container logs of every other installed app, discovered via
 How often, in seconds, to poll the Supervisor API for new log lines.
 Must be between 5 and 300.
 
+### Option: `logs_timezone`
+
+IANA timezone name (e.g. `Europe/Stockholm`) that the Home Assistant Core
+log's timestamps are written in. Home Assistant Core writes
+`home-assistant.log` in local time with no UTC offset in the string, so this
+tells Fluent Bit's parser the correct offset to convert them to UTC before
+shipping to Loki. The offset is resolved once when the `fluent-bit` service
+(re)starts, so it reflects standard or daylight time correctly as of that
+moment. Leave as `UTC` (the default) if Core's timestamps are already UTC.
+Only affects Core log parsing — the Host, Supervisor, and app log sources
+are stamped with real time as they're tailed, so they're unaffected.
+
 ## Required permissions
 
 This app requests `hassio_api: true` with `hassio_role: admin` in order to

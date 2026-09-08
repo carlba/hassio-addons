@@ -22,7 +22,10 @@ declare collect_host_log
 declare collect_supervisor_log
 declare collect_addon_logs
 declare config_file
+declare parsers_file
 declare log_dir
+declare logs_timezone
+declare core_log_time_offset
 
 log_dir="/var/log/fluent-bit-src"
 
@@ -44,8 +47,30 @@ else
 fi
 
 config_file="/etc/fluent-bit/fluent-bit.conf"
+parsers_file="/etc/fluent-bit/parsers.conf"
+
+# Home Assistant Core writes home-assistant.log timestamps in local time with
+# no UTC offset in the string, so the ha_log_line parser needs that offset to
+# convert them to UTC. Resolved from the logs_timezone option (an IANA TZ
+# name) so DST is handled correctly as of this service (re)start.
+logs_timezone=$(bashio::config 'logs_timezone')
+if [[ -n "${logs_timezone}" ]]; then
+    core_log_time_offset=$(TZ="${logs_timezone}" date +%z)
+fi
+core_log_time_offset="${core_log_time_offset:-+0000}"
+bashio::log.info "Core log timezone: ${logs_timezone:-unset, defaulting to UTC} (offset ${core_log_time_offset})"
 
 bashio::log.info "Rendering Fluent Bit configuration..."
+
+cat <<EOF > "${parsers_file}"
+[PARSER]
+    Name        ha_log_line
+    Format      regex
+    Regex       ^(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) (?<level>[A-Z]+) \((?<thread>[^)]*)\) \[(?<component>[^\]]*)\] (?<message>.*)\$
+    Time_Key    time
+    Time_Format %Y-%m-%d %H:%M:%S.%L
+    Time_Offset ${core_log_time_offset}
+EOF
 
 {
     cat <<EOF

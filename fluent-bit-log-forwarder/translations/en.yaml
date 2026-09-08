@@ -46,3 +46,7 @@ configuration:
   poll_interval_seconds:
     name: Poll interval (seconds)
     description: How often, in seconds, to poll the Supervisor API for new log lines.
+
+  logs_timezone:
+    name: Logs timezone
+    description: IANA timezone name (e.g. Europe/Stockholm) that the Home Assistant Core log's timestamps are written in. Used to convert them to UTC before shipping to Loki. Leave as UTC if Core's timestamps are already UTC.

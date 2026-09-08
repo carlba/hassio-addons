@@ -18,7 +18,16 @@ cursor_file="${CURSOR_DIR}/${cursor_name}"
 
 mkdir -p "${CURSOR_DIR}"
 
-body=$(curl -s -H "${AUTH_HEADER}" "${SUPERVISOR_API}${api_path}")
+body_file=$(mktemp)
+trap 'rm -f "${body_file}"' EXIT
+
+http_code=$(curl -s -o "${body_file}" -w '%{http_code}' -H "${AUTH_HEADER}" "${SUPERVISOR_API}${api_path}")
+if [[ "${http_code}" != "200" ]]; then
+    echo "poll-source.sh: GET ${api_path} failed with HTTP ${http_code}: $(cat "${body_file}")" >&2
+    exit 1
+fi
+
+body=$(cat "${body_file}")
 total=$(printf '%s\n' "${body}" | wc -l | tr -d ' ')
 last=0
 [[ -f "${cursor_file}" ]] && last=$(cat "${cursor_file}")

@@ -18,6 +18,7 @@ RUN \
     && apt-get install --no-install-recommends -y \
         curl \
         jq \
+        tzdata \
         libyaml-0-2 \
         libpq5 \
     && rm -rf /var/lib/apt/lists/*
