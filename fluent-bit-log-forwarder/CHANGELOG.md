@@ -1,4 +1,14 @@
 <!-- https://developers.home-assistant.io/docs/apps/presentation#keeping-a-changelog -->
+## 0.2.5
+
+- The 0.2.4 AppArmor profile widening did not fix the segfault (exit code
+  139). Rather than continue guessing at individual permissions, disabled
+  AppArmor confinement for this app entirely (`apparmor: false` in
+  `config.yaml`) and removed the now-unused `apparmor.txt` profile. If this
+  fixes it, the next step is to narrow the profile back down deliberately
+  (e.g. via `complain` mode + audit log) instead of running unconfined
+  long-term.
+
 ## 0.2.4
 
 - Fixed a segfault (exit code 139) in Fluent Bit that only occurred under

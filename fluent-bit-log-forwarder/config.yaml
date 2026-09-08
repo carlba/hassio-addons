@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/apps/configuration#app-configuration
 name: Fluent Bit Log Forwarder
-version: "0.2.4"
+version: "0.2.5"
 slug: fluent_bit_log_forwarder
 description: Collect Home Assistant Core, Host, Supervisor, and app logs and forward them to Grafana Loki via Fluent Bit
 url: "https://github.com/carlba/hassio-addons/tree/main/fluent-bit-log-forwarder"
@@ -10,6 +10,7 @@ arch:
 init: false
 hassio_api: true
 hassio_role: admin
+apparmor: false
 map:
   - type: homeassistant_config
     read_only: true
