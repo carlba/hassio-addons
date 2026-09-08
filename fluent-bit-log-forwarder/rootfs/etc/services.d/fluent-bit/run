@@ -49,6 +49,8 @@ fi
 config_file="/etc/fluent-bit/fluent-bit.conf"
 parsers_file="/etc/fluent-bit/parsers.conf"
 
+mkdir -p /etc/fluent-bit
+
 # Home Assistant Core writes home-assistant.log timestamps in local time with
 # no UTC offset in the string, so the ha_log_line parser needs that offset to
 # convert them to UTC. Resolved from the logs_timezone option (an IANA TZ
