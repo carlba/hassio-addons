@@ -15,6 +15,6 @@ slugs=$(curl -s -H "${AUTH_HEADER}" "${SUPERVISOR_API}/addons" \
     | jq -r '.data.addons[].slug')
 
 for slug in ${slugs}; do
-    "${SCRIPT_DIR}/poll-source.sh" "/addons/${slug}/logs/latest" "addon-${slug}" \
+    "${SCRIPT_DIR}/poll-source.sh" "/addons/${slug}/logs" "addon-${slug}" \
         | sed "s/^/${slug}: /"
 done

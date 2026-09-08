@@ -24,7 +24,7 @@ trap 'rm -f "${body_file}"' EXIT
 http_code=$(curl -s -o "${body_file}" -w '%{http_code}' -H "${AUTH_HEADER}" "${SUPERVISOR_API}${api_path}")
 if [[ "${http_code}" != "200" ]]; then
     echo "poll-source.sh: GET ${api_path} failed with HTTP ${http_code}: $(cat "${body_file}")" >&2
-    exit 1
+    exit 0
 fi
 
 body=$(cat "${body_file}")
