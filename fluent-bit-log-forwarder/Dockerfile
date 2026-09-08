@@ -21,6 +21,7 @@ RUN \
         tzdata \
         libyaml-0-2 \
         libpq5 \
+        python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy root filesystem
