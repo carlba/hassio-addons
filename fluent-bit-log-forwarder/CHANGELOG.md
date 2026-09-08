@@ -1,11 +1,21 @@
 <!-- https://developers.home-assistant.io/docs/apps/presentation#keeping-a-changelog -->
+## 0.2.4
+
+- Fixed a segfault (exit code 139) in Fluent Bit that only occurred under
+  the app's AppArmor confinement, not when running the same binary and
+  config standalone. The bundled `apparmor.txt` profile was hand-tuned for
+  Fluent Bit 3.2.5 and denied file/proc access that the 5.1.2 OpenSSL 3.x
+  TLS stack needs; a denied access on some paths surfaces as SIGSEGV
+  rather than a clean error. Widened the profile (OpenSSL abstraction,
+  `/proc` and `/sys` CPU/entropy info, CA certificate paths).
+
 ## 0.2.3
 
-- Fixed a segfault (exit code 139) in Fluent Bit when using a TLS-enabled
-  Loki output with HTTP basic auth, surfaced by the 0.2.2 diagnostic
-  logging. Upgraded the pinned Fluent Bit version from 3.2.5 to 5.1.2,
-  which requires switching the base image from Debian bookworm (glibc
-  2.36) to trixie (glibc 2.40+).
+- Upgraded the pinned Fluent Bit version from 3.2.5 to 5.1.2 (requiring
+  the base image to move from Debian bookworm to trixie for its glibc
+  2.38+ requirement), after the 0.2.2 diagnostic logging revealed a
+  segfault (exit code 139). This did not fix the segfault on its own —
+  see 0.2.4.
 
 ## 0.2.2
 

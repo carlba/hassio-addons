@@ -37,6 +37,7 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
 
   profile fluent_bit flags=(attach_disconnected,mediate_deleted) {
     #include <abstractions/base>
+    #include <abstractions/openssl>
 
     # Receive signals from S6-Overlay
     signal (receive) peer=*_fluent_bit_log_forwarder,
@@ -56,6 +57,9 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
     # 2. Add `complain` as a flag to this profile temporarily and run the app
     # 3. Review the audit log with `journalctl _TRANSPORT="audit" -g 'apparmor="ALLOWED"'` and add other access as needed
     # Remember to remove the `complain` flag when you are done
+    # Widened for Fluent Bit 5.x (OpenSSL 3.x TLS stack, glibc/CPU feature
+    # detection) after upgrading from 3.2.5, which only needed the narrower
+    # set below.
     /usr/bin/fluent-bit r,
     /usr/bin/curl rix,
     /usr/bin/jq rix,
@@ -64,6 +68,17 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
     /etc/passwd r,
     /etc/resolv.conf r,
     /etc/ssl/** r,
+    /etc/ssl/openssl.cnf r,
+    /usr/lib/ssl/** r,
+    /usr/share/ca-certificates/** r,
+    /etc/ca-certificates.conf r,
+    /proc/sys/kernel/random/uuid r,
+    /proc/cpuinfo r,
+    /proc/*/maps r,
+    /proc/*/status r,
+    /sys/devices/system/cpu/** r,
+    /dev/urandom r,
+    /dev/random r,
     /dev/tty rw,
   }
 }
