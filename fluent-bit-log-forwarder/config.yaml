@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/apps/configuration#app-configuration
 name: Fluent Bit Log Forwarder
-version: '0.4.0'
+version: '0.4.1'
 slug: fluent_bit_log_forwarder
 description:
   Collect Home Assistant Core, Host, Supervisor, and app logs and forward them to Grafana Loki via
@@ -32,4 +32,4 @@ schema:
   loki_user: 'str?'
   loki_password: 'password?'
   logs_timezone: 'str'
-# image: 'ghcr.io/carlba/fluent-bit-log-forwarder'
+image: 'ghcr.io/carlba/fluent-bit-log-forwarder'

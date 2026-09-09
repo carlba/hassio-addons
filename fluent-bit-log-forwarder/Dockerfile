@@ -18,6 +18,10 @@ RUN \
     && apt-get install --no-install-recommends -y \
         tzdata \
         libyaml-0-2 \
+        libcurl4 \
+        libssl3 \
+        libsasl2-2 \
+        libpq5 \
         python3 \
         python3-pip \
     && pip3 install --no-cache-dir --break-system-packages jinja2-cli \
