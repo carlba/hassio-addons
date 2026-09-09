@@ -65,7 +65,7 @@ jinja2 \
 
 
 
-bashio::log.info "Starting Fluent Bit... $(cat ${config_file})"
+bashio::log.info "Starting Fluent Bit..."
 fluent-bit -c "${config_file}"
 exit_code=$?
 bashio::log.warning "Fluent Bit exited with code ${exit_code}"

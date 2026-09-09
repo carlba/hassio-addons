@@ -1,12 +1,9 @@
 #include <tunables/global>
 
-# NOTE: profiles below are flagged `complain` for initial validation.
-# 1. Deploy, exercise the app normally (all four log sources, TLS on/off).
-# 2. Review the audit log: journalctl _TRANSPORT="audit" -g 'apparmor="ALLOWED"'
-# 3. Add any missing access below, then remove `,complain` from each profile
-#    flags line before relying on this for confinement.
+# NOTE: profiles were validated in `complain` mode (all four log sources,
+# TLS on/off) before enforcement was enabled below.
 
-profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted,complain) {
+profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
   #include <abstractions/base>
   #include <abstractions/python>
 
@@ -63,7 +60,7 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted,comp
   # Start new profile for the fluent-bit service
   /usr/bin/fluent-bit cx -> fluent_bit,
 
-  profile fluent_bit flags=(attach_disconnected,mediate_deleted,complain) {
+  profile fluent_bit flags=(attach_disconnected,mediate_deleted) {
     #include <abstractions/base>
     #include <abstractions/openssl>
 
