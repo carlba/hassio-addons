@@ -80,18 +80,18 @@ cat <<EOF > "${parsers_file}"
 EOF
 
 jinja2 \
-    --set-env loki_host "${loki_host}" \
-    --set-env loki_port "${loki_port}" \
-    --set-env loki_tls "${loki_tls}" \
-    --set-env loki_uri "${loki_uri}" \
-    --set-env loki_tenant_id "${loki_tenant_id}" \
-    --set-env loki_user "${loki_user}" \
-    --set-env loki_password "${loki_password}" \
-    --set-env collect_core_log "${collect_core_log}" \
-    --set-env collect_host_log "${collect_host_log}" \
-    --set-env collect_supervisor_log "${collect_supervisor_log}" \
-    --set-env collect_addon_logs "${collect_addon_logs}" \
-    --set-env log_dir "${log_dir}" \
+    -D loki_host="${loki_host}" \
+    -D loki_port="${loki_port}" \
+    -D loki_tls="${loki_tls}" \
+    -D loki_uri="${loki_uri}" \
+    -D loki_tenant_id="${loki_tenant_id}" \
+    -D loki_user="${loki_user}" \
+    -D loki_password="${loki_password}" \
+    -D collect_core_log="${collect_core_log}" \
+    -D collect_host_log="${collect_host_log}" \
+    -D collect_supervisor_log="${collect_supervisor_log}" \
+    -D collect_addon_logs="${collect_addon_logs}" \
+    -D log_dir="${log_dir}" \
     /etc/fluent-bit/fluent-bit.conf.j2 > "${config_file}"
 
 bashio::log.info "Starting Fluent Bit..."
