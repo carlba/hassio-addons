@@ -9,7 +9,6 @@
 profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted,complain) {
   #include <abstractions/base>
   #include <abstractions/python>
-  #include <abstractions/openssl>
 
   # Capabilities
   # NOTE: no bare `file,` rule here (unlike a stock HA app template) — it
@@ -18,8 +17,6 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted,comp
   # conflicting x modifiers", fails to load). The specific path rules
   # throughout this profile already cover what the app needs.
   signal (send) set=(kill,term,int,hup,cont),
-  network inet stream,
-  network inet6 stream,
 
   # S6-Overlay
   /init ix,
@@ -44,27 +41,19 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted,comp
   # Home Assistant Core config mount (read-only)
   /homeassistant/** r,
 
-  # supervisor-poller (run.py, via `exec python3` in its s6 run script):
-  # writes the log files fluent-bit tails, talks to the Supervisor API.
-  # Runs directly in this profile rather than a `cx`-transitioned child —
-  # it's our own script, not a separate trust boundary like fluent-bit,
-  # and a python3 child profile would need its own transition rule that
-  # overlaps /usr/bin/** ix above the same way a bare `file,` rule does.
+  # jinja2-cli (run.py, via `exec python3` in its s6 run script) renders
+  # the Fluent Bit config template. Runs directly in this profile rather
+  # than a `cx`-transitioned child — it's our own script, not a separate
+  # trust boundary like fluent-bit, and a python3 child profile would need
+  # its own transition rule that overlaps /usr/bin/** ix above the same way
+  # a bare `file,` rule does.
   /usr/lib/python3*/** r,
   /usr/lib/python3.*/lib-dynload/*.so mr,
-  /var/log/fluent-bit-src/ rw,
-  /var/log/fluent-bit-src/*.log rw,
 
-  # HTTP(S) calls to the Supervisor API via urllib — needs the cert store
-  # even though the connection itself is plain HTTP, since Python's ssl
-  # module loads it at import time
-  /etc/passwd r,
-  /etc/resolv.conf r,
-  /etc/ssl/** r,
-  /etc/ssl/openssl.cnf r,
-  /usr/lib/ssl/** r,
-  /usr/share/ca-certificates/** r,
-  /etc/ca-certificates.conf r,
+  # Locate the active journal directory under /var/log/journal to pass to
+  # Fluent Bit's `systemd` input
+  /var/log/journal/ r,
+  /var/log/journal/** r,
   /proc/sys/kernel/random/uuid r,
   /proc/*/maps r,
   /proc/*/status r,
@@ -90,9 +79,10 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted,comp
     # Fluent Bit config, parsers, and helper scripts
     /etc/fluent-bit/** rix,
 
-    # Log source files written by supervisor-poller, tailed via the `tail`
-    # input; DB files track tail offsets across restarts
-    /var/log/fluent-bit-src/*.log r,
+    # System journal, read directly via the `systemd` input; the DB file
+    # under /data tracks the read cursor across restarts
+    /var/log/journal/ r,
+    /var/log/journal/** r,
 
     # Access required for service functionality
     /usr/bin/fluent-bit r,

@@ -27,26 +27,6 @@ configuration:
     name: Loki password
     description: Optional HTTP basic auth password, required by hosted Loki instances such as Grafana Cloud (an API key). Leave empty if not required.
 
-  collect_core_log:
-    name: Collect Core log
-    description: Forward the Home Assistant Core log (home-assistant.log) to Loki.
-
-  collect_host_log:
-    name: Collect Host log
-    description: Forward the Host/OS journal log to Loki.
-
-  collect_supervisor_log:
-    name: Collect Supervisor log
-    description: Forward the Supervisor log to Loki. Supervisor log entries live in the same journal as the Host log, so this is a separate label rather than a separate source.
-
-  collect_addon_logs:
-    name: Collect app logs
-    description: Forward the container logs of every other installed app to Loki.
-
-  poll_interval_seconds:
-    name: Poll interval (seconds)
-    description: How often, in seconds, to poll the Supervisor API for new log lines.
-
   logs_timezone:
     name: Logs timezone
     description: IANA timezone name (e.g. Europe/Stockholm) that the Home Assistant Core log's timestamps are written in. Used to convert them to UTC before shipping to Loki. Leave as UTC if Core's timestamps are already UTC.

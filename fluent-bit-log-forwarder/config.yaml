@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/apps/configuration#app-configuration
 name: Fluent Bit Log Forwarder
-version: '0.3.11'
+version: '0.4.0'
 slug: fluent_bit_log_forwarder
 description:
   Collect Home Assistant Core, Host, Supervisor, and app logs and forward them to Grafana Loki via
@@ -11,8 +11,6 @@ arch:
   - amd64
 init: false
 journald: true
-hassio_api: true
-hassio_role: admin
 map:
   - type: homeassistant_config
     read_only: true
@@ -24,11 +22,6 @@ options:
   loki_tenant_id: ''
   loki_user: ''
   loki_password: ''
-  collect_core_log: true
-  collect_host_log: true
-  collect_supervisor_log: true
-  collect_addon_logs: true
-  poll_interval_seconds: 15
   logs_timezone: 'UTC'
 schema:
   loki_host: 'str'
@@ -38,10 +31,5 @@ schema:
   loki_tenant_id: 'str?'
   loki_user: 'str?'
   loki_password: 'password?'
-  collect_core_log: 'bool'
-  collect_host_log: 'bool'
-  collect_supervisor_log: 'bool'
-  collect_addon_logs: 'bool'
-  poll_interval_seconds: 'int(5,300)'
   logs_timezone: 'str'
-image: 'ghcr.io/carlba/fluent-bit-log-forwarder'
+# image: 'ghcr.io/carlba/fluent-bit-log-forwarder'

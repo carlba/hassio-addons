@@ -3,11 +3,11 @@
 # Start the Fluent Bit log forwarder service
 # s6-overlay docs: https://github.com/just-containers/s6-overlay
 #
-# Log content reaches Fluent Bit via the `tail` input, reading files that the
-# sibling `supervisor-poller` service maintains. `exec` is deliberately not
-# used here: Fluent Bit's own docs note it is compiled out of production
-# images (needs /bin/sh) and warn it is a shell-injection risk for untrusted
-# command output such as log content.
+# Log content reaches Fluent Bit via the `systemd` input, reading directly
+# from the system journal. `exec` is deliberately not used here: Fluent
+# Bit's own docs note it is compiled out of production images (needs
+# /bin/sh) and warn it is a shell-injection risk for untrusted command
+# output such as log content.
 # ==============================================================================
 
 declare loki_host
@@ -17,17 +17,9 @@ declare loki_uri
 declare loki_tenant_id
 declare loki_user
 declare loki_password
-declare collect_core_log
-declare collect_host_log
-declare collect_supervisor_log
-declare collect_addon_logs
 declare config_file
-declare parsers_file
-declare log_dir
 declare logs_timezone
 declare core_log_time_offset
-
-log_dir="/var/log/fluent-bit-src"
 
 loki_host=$(bashio::config 'loki_host')
 loki_port=$(bashio::config 'loki_port')
@@ -35,10 +27,7 @@ loki_uri=$(bashio::config 'loki_uri')
 loki_tenant_id=$(bashio::config 'loki_tenant_id')
 loki_user=$(bashio::config 'loki_user')
 loki_password=$(bashio::config 'loki_password')
-collect_core_log=$(bashio::config 'collect_core_log')
-collect_host_log=$(bashio::config 'collect_host_log')
-collect_supervisor_log=$(bashio::config 'collect_supervisor_log')
-collect_addon_logs=$(bashio::config 'collect_addon_logs')
+
 
 if bashio::var.true "$(bashio::config 'loki_tls')"; then
     loki_tls="on"
@@ -47,8 +36,6 @@ else
 fi
 
 config_file="/etc/fluent-bit/fluent-bit.conf"
-parsers_file="/etc/fluent-bit/parsers.conf"
-
 mkdir -p /etc/fluent-bit
 
 # Home Assistant Core writes home-assistant.log timestamps in local time with
@@ -61,23 +48,9 @@ if [[ -n "${logs_timezone}" ]]; then
 fi
 core_log_time_offset="${core_log_time_offset:-+0000}"
 bashio::log.info "Core log timezone: ${logs_timezone:-unset, defaulting to UTC} (offset ${core_log_time_offset})"
-
 bashio::log.info "Rendering Fluent Bit configuration..."
 
-cat <<EOF > "${parsers_file}"
-[PARSER]
-    Name        ha_log_line
-    Format      regex
-    Regex       ^(?:\x1b\[\d+m)?(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) (?<level>[A-Z]+) \((?<thread>[^)]*)\) \[(?<component>[^\]]*)\] (?<message>.*?)(?:\x1b\[0m)?\$
-    Time_Key    time
-    Time_Format %Y-%m-%d %H:%M:%S.%L
-    Time_Offset ${core_log_time_offset}
-
-[PARSER]
-    Name        addon_filename
-    Format      regex
-    Regex       ^.*/addon-(?<addon_name>.+)\.log\$
-EOF
+journal_path=$(find /var/log/journal -mindepth 1 -maxdepth 1 -type d -print -quit)
 
 jinja2 \
     -D loki_host="${loki_host}" \
@@ -87,14 +60,12 @@ jinja2 \
     -D loki_tenant_id="${loki_tenant_id}" \
     -D loki_user="${loki_user}" \
     -D loki_password="${loki_password}" \
-    -D collect_core_log="${collect_core_log}" \
-    -D collect_host_log="${collect_host_log}" \
-    -D collect_supervisor_log="${collect_supervisor_log}" \
-    -D collect_addon_logs="${collect_addon_logs}" \
-    -D log_dir="${log_dir}" \
+    -D journal_path="${journal_path}" \
     /etc/fluent-bit/fluent-bit.conf.j2 > "${config_file}"
 
-bashio::log.info "Starting Fluent Bit..."
+
+
+bashio::log.info "Starting Fluent Bit... $(cat ${config_file})"
 fluent-bit -c "${config_file}"
 exit_code=$?
 bashio::log.warning "Fluent Bit exited with code ${exit_code}"

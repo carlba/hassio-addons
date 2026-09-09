@@ -1,5 +1,9 @@
 <!-- https://developers.home-assistant.io/docs/apps/presentation#keeping-a-changelog -->
 
+## 0.4.0
+
+- Replaced logs from Supervisor HTTP api with systemd journal logs exposed by homeassistant
+
 ## 0.3.9
 
 - Switched to using jinja2-cli and a template for the Fluent Bit config file. The heredocs where
