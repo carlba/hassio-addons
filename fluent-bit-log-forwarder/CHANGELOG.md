@@ -1,4 +1,13 @@
 <!-- https://developers.home-assistant.io/docs/apps/presentation#keeping-a-changelog -->
+## 0.3.4
+
+- App logs no longer have their slug baked into the log line text (e.g.
+  `a0d7b954_tailscale: ...`). Each app now streams to its own
+  `addon-<slug>.log` file, and Fluent Bit derives an `addon_name` label
+  from the filename instead, so the app can be filtered/grouped on
+  properly in Grafana (`{job="ha_addon", addon_name="..."}`) rather than
+  via text search on the log body.
+
 ## 0.2.5
 
 - The 0.2.4 AppArmor profile widening did not fix the segfault (exit code

@@ -45,11 +45,10 @@ def fetch_addon_slugs():
 class Stream:
     """A single supervised background thread streaming a log source to a file."""
 
-    def __init__(self, api_path, out_file, source_name, prefix=None):
+    def __init__(self, api_path, out_file, source_name):
         self.api_path = api_path
         self.out_file = out_file
         self.source_name = source_name
-        self.prefix = prefix
         self.thread = None
 
     def start(self):
@@ -68,8 +67,6 @@ class Stream:
         try:
             with urllib.request.urlopen(request) as response, open(self.out_file, "ab") as out_fh:
                 for line in response:
-                    if self.prefix:
-                        line = f"{self.prefix}: ".encode() + line
                     out_fh.write(line)
                     out_fh.flush()
         except (urllib.error.URLError, OSError):
@@ -99,9 +96,8 @@ def build_streams(options):
             streams.append(
                 Stream(
                     f"/addons/{slug}/logs/follow",
-                    f"{LOG_DIR}/addon.log",
+                    f"{LOG_DIR}/addon-{slug}.log",
                     f"addon-{slug}",
-                    prefix=slug,
                 )
             )
 

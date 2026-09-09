@@ -122,5 +122,14 @@ Each log source is shipped with a `job` label (`ha_core`, `ha_host`,
 {job="ha_addon"} |= "error"
 ```
 
+App logs also carry an `addon_name` label set to the app's slug (e.g.
+`a0d7b954_tailscale`), so you can filter to a single app:
+
+```logql
+{job="ha_addon", addon_name="a0d7b954_tailscale"}
+```
+
+Non-app log sources (Core, Host, Supervisor) carry `addon_name="-"`.
+
 Core log lines are additionally parsed for `level` and `component` fields
 using Home Assistant's standard log line format.

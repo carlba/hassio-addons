@@ -72,6 +72,11 @@ cat <<EOF > "${parsers_file}"
     Time_Key    time
     Time_Format %Y-%m-%d %H:%M:%S.%L
     Time_Offset ${core_log_time_offset}
+
+[PARSER]
+    Name        addon_filename
+    Format      regex
+    Regex       ^.*/addon-(?<addon_name>.+)\.log\$
 EOF
 
 {
@@ -125,7 +130,8 @@ EOF
 [INPUT]
     Name           tail
     Tag            ha.addon
-    Path           ${log_dir}/addon.log
+    Path           ${log_dir}/addon-*.log
+    Path_Key       filename
     DB             /data/tail-addon.db
     Read_from_Head true
 
@@ -138,6 +144,7 @@ EOF
     Match   ha.core
     Add     job ha_core
     Add     source core
+    Add     addon_name -
 
 [FILTER]
     Name    parser
@@ -158,6 +165,7 @@ EOF
     Match   ha.host
     Add     job ha_host
     Add     source host
+    Add     addon_name -
 
 [FILTER]
     Name    parser
@@ -171,6 +179,7 @@ EOF
     Match   ha.supervisor
     Add     job ha_supervisor
     Add     source supervisor
+    Add     addon_name -
 
 [FILTER]
     Name    parser
@@ -180,10 +189,18 @@ EOF
     Reserve_Data On
 
 [FILTER]
+    Name    parser
+    Match   ha.addon
+    Key_Name filename
+    Parser  addon_filename
+    Reserve_Data On
+
+[FILTER]
     Name    modify
     Match   ha.addon
     Add     job ha_addon
     Add     source addon
+    Remove  filename
 
 [OUTPUT]
     Name         loki
@@ -204,7 +221,7 @@ EOF
     fi
 
     cat <<EOF
-    Labels       job=\$job, source=\$source, level=\$level
+    Labels       job=\$job, source=\$source, level=\$level, addon_name=\$addon_name
     Line_Format  json
     Auto_Kubernetes_Labels Off
 EOF
