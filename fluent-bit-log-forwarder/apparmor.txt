@@ -1,7 +1,12 @@
 #include <tunables/global>
 
 # NOTE: profiles were validated in `complain` mode (all four log sources,
-# TLS on/off) before enforcement was enabled below.
+# TLS on/off) before enforcement was enabled below. An earlier enforcement
+# attempt on 2026-09-10 failed with `/bin/sh: 0: cannot open /init:
+# Permission denied` — root-caused via `journalctl -g 'apparmor='` to a
+# `requested_mask="r"` denial on `/init` itself: it's a `#!/bin/sh` script,
+# and the interpreter needs to open+read it, which plain `ix` doesn't grant.
+# Fixed by using `rix` on that rule.
 
 profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
   #include <abstractions/base>
@@ -16,7 +21,10 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
   signal (send) set=(kill,term,int,hup,cont),
 
   # S6-Overlay
-  /init ix,
+  # `/init` is a `#!/bin/sh` script (see rootfs of base-debian:trixie), so
+  # the interpreter needs to open+read it as a file in addition to the
+  # exec bit — plain `ix` alone denies that open with requested_mask="r".
+  /init rix,
   /bin/** ix,
   /usr/bin/** ix,
   /run/{s6,s6-rc*,service}/** ix,
