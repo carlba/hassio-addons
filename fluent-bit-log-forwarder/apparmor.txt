@@ -43,6 +43,11 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
   /etc/passwd r,
   /etc/group r,
 
+  # s6-rc-compile reads the service definitions to build the runtime
+  # service database
+  /etc/s6-overlay/ r,
+  /etc/s6-overlay/** r,
+
   # Bashio
   /usr/lib/bashio/** ix,
   /tmp/** rwk,
