@@ -47,8 +47,10 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted,comp
   /usr/bin/fluent-bit cx -> fluent_bit,
 
   # Start new profile for the supervisor-poller service
-  /usr/bin/python3.[0-9]* cx -> python3,
-  /usr/bin/python3 cx -> python3,
+  # (priority= makes this glob win over the /usr/bin/** ix rule above where
+  # they overlap; without it apparmor_parser refuses to load the profile
+  # with "merged rule with conflicting x modifiers")
+  priority=1 /usr/bin/python3* cx -> python3,
 
   profile fluent_bit flags=(attach_disconnected,mediate_deleted,complain) {
     #include <abstractions/base>
@@ -103,7 +105,7 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted,comp
     # run.py itself, plus the stdlib it imports (json, threading,
     # urllib.request/error, os, sys, time)
     /etc/services.d/supervisor-poller/run.py r,
-    /usr/bin/python3.[0-9]* rix,
+    /usr/bin/python3.* rix,
     /usr/lib/python3*/** r,
     /usr/lib/python3.*/lib-dynload/*.so mr,
 
