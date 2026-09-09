@@ -8,9 +8,15 @@
 
 profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted,complain) {
   #include <abstractions/base>
+  #include <abstractions/python>
+  #include <abstractions/openssl>
 
   # Capabilities
-  file,
+  # NOTE: no bare `file,` rule here (unlike a stock HA app template) — it
+  # grants blanket rwlkmix access to every path, which apparmor_parser
+  # can't merge with the `cx ->` transition rule below ("merged rule with
+  # conflicting x modifiers", fails to load). The specific path rules
+  # throughout this profile already cover what the app needs.
   signal (send) set=(kill,term,int,hup,cont),
   network inet stream,
   network inet6 stream,
@@ -38,19 +44,35 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted,comp
   # Home Assistant Core config mount (read-only)
   /homeassistant/** r,
 
-  # Log files written by supervisor-poller (python3 profile below) and
-  # tailed by fluent-bit (fluent_bit profile below)
+  # supervisor-poller (run.py, via `exec python3` in its s6 run script):
+  # writes the log files fluent-bit tails, talks to the Supervisor API.
+  # Runs directly in this profile rather than a `cx`-transitioned child —
+  # it's our own script, not a separate trust boundary like fluent-bit,
+  # and a python3 child profile would need its own transition rule that
+  # overlaps /usr/bin/** ix above the same way a bare `file,` rule does.
+  /usr/lib/python3*/** r,
+  /usr/lib/python3.*/lib-dynload/*.so mr,
   /var/log/fluent-bit-src/ rw,
-  /var/log/fluent-bit-src/** rw,
+  /var/log/fluent-bit-src/*.log rw,
+
+  # HTTP(S) calls to the Supervisor API via urllib — needs the cert store
+  # even though the connection itself is plain HTTP, since Python's ssl
+  # module loads it at import time
+  /etc/passwd r,
+  /etc/resolv.conf r,
+  /etc/ssl/** r,
+  /etc/ssl/openssl.cnf r,
+  /usr/lib/ssl/** r,
+  /usr/share/ca-certificates/** r,
+  /etc/ca-certificates.conf r,
+  /proc/sys/kernel/random/uuid r,
+  /proc/*/maps r,
+  /proc/*/status r,
+  /dev/urandom r,
+  /dev/random r,
 
   # Start new profile for the fluent-bit service
   /usr/bin/fluent-bit cx -> fluent_bit,
-
-  # Start new profile for the supervisor-poller service
-  # (priority= makes this glob win over the /usr/bin/** ix rule above where
-  # they overlap; without it apparmor_parser refuses to load the profile
-  # with "merged rule with conflicting x modifiers")
-  priority=1 /usr/bin/python3* cx -> python3,
 
   profile fluent_bit flags=(attach_disconnected,mediate_deleted,complain) {
     #include <abstractions/base>
@@ -89,45 +111,5 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted,comp
     /dev/urandom r,
     /dev/random r,
     /dev/tty rw,
-  }
-
-  profile python3 flags=(attach_disconnected,mediate_deleted,complain) {
-    #include <abstractions/base>
-    #include <abstractions/python>
-    #include <abstractions/openssl>
-
-    # Receive signals from S6-Overlay
-    signal (receive) peer=*_fluent_bit_log_forwarder,
-
-    network inet stream,
-    network inet6 stream,
-
-    # run.py itself, plus the stdlib it imports (json, threading,
-    # urllib.request/error, os, sys, time)
-    /etc/services.d/supervisor-poller/run.py r,
-    /usr/bin/python3.* rix,
-    /usr/lib/python3*/** r,
-    /usr/lib/python3.*/lib-dynload/*.so mr,
-
-    # Writes the log files fluent-bit tails; creates the dir and files
-    # (os.makedirs, open(..., "a")/"ab") on each stream (re)start
-    /var/log/fluent-bit-src/ rw,
-    /var/log/fluent-bit-src/*.log rw,
-
-    # HTTP(S) calls to the Supervisor API (http://supervisor, no TLS) via
-    # urllib — needs cert store even though the connection itself is plain
-    # HTTP, since Python's ssl module loads it at import time
-    /etc/passwd r,
-    /etc/resolv.conf r,
-    /etc/ssl/** r,
-    /etc/ssl/openssl.cnf r,
-    /usr/lib/ssl/** r,
-    /usr/share/ca-certificates/** r,
-    /etc/ca-certificates.conf r,
-    /proc/sys/kernel/random/uuid r,
-    /proc/*/maps r,
-    /proc/*/status r,
-    /dev/urandom r,
-    /dev/random r,
   }
 }

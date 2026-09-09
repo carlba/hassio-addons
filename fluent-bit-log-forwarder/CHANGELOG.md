@@ -1,15 +1,30 @@
 <!-- https://developers.home-assistant.io/docs/apps/presentation#keeping-a-changelog -->
+## 0.3.7
+
+- Fixed `apparmor.txt` failing to load on the Supervisor
+  (`can't load profile ...: exit status 1`), which broke 0.3.5/0.3.6.
+  Two issues: a bare `file,` capability rule, and giving
+  `supervisor-poller` its own `python3` child profile transitioned to via
+  a glob (`/usr/bin/python3* cx -> python3`) both overlap the blanket
+  `/usr/bin/** ix` rule in a way `apparmor_parser` can't merge ("merged
+  rule with conflicting x modifiers"); `priority=` would resolve that
+  cleanly but isn't supported by the parser version Home Assistant OS
+  ships. Fix: dropped the redundant `file,` rule, and folded
+  `supervisor-poller`'s rules into the top-level profile instead of a
+  separate child profile — it's our own script, not a separate trust
+  boundary the way the third-party `fluent-bit` binary is, so it doesn't
+  need its own `cx` transition. Verified against both AppArmor parser
+  3.0.8 and 4.1.0 before deploying.
+
 ## 0.3.5
 
 - Re-enabled AppArmor confinement (dropped `apparmor: false`), disabled
   since 0.2.5 after a profile widening didn't fix a segfault under the old
   bash/curl/jq-based log collector. The collector was since rewritten as a
   pure-Python `supervisor-poller` service (0.2.6+), so the profile is
-  rebuilt from scratch for the current process/file/network footprint:
-  the `fluent_bit` child profile is carried over largely unchanged, and a
-  new `python3` child profile replaces the old curl/jq/bash rules. All
-  profiles ship flagged `complain` so behavior can be validated against
-  the audit log before switching to enforce mode.
+  rebuilt from scratch for the current process/file/network footprint.
+  All profiles ship flagged `complain` so behavior can be validated
+  against the audit log before switching to enforce mode.
 
 ## 0.3.4
 
