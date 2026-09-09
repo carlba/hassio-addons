@@ -1,4 +1,16 @@
 <!-- https://developers.home-assistant.io/docs/apps/presentation#keeping-a-changelog -->
+## 0.3.5
+
+- Re-enabled AppArmor confinement (dropped `apparmor: false`), disabled
+  since 0.2.5 after a profile widening didn't fix a segfault under the old
+  bash/curl/jq-based log collector. The collector was since rewritten as a
+  pure-Python `supervisor-poller` service (0.2.6+), so the profile is
+  rebuilt from scratch for the current process/file/network footprint:
+  the `fluent_bit` child profile is carried over largely unchanged, and a
+  new `python3` child profile replaces the old curl/jq/bash rules. All
+  profiles ship flagged `complain` so behavior can be validated against
+  the audit log before switching to enforce mode.
+
 ## 0.3.4
 
 - App logs no longer have their slug baked into the log line text (e.g.
