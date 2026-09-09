@@ -23,7 +23,7 @@ RUN \
         libpq5 \
         python3 \
         python3-pip \
-    && pip3 install --no-cache-dir jinja2-cli \
+    && pip3 install --no-cache-dir --break-system-packages jinja2-cli \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy root filesystem
