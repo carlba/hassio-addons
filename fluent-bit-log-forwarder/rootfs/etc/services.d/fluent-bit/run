@@ -184,13 +184,6 @@ EOF
 [FILTER]
     Name    parser
     Match   ha.addon
-    Key_Name log
-    Parser  ha_log_line
-    Reserve_Data On
-
-[FILTER]
-    Name    parser
-    Match   ha.addon
     Key_Name filename
     Parser  addon_filename
     Reserve_Data On
