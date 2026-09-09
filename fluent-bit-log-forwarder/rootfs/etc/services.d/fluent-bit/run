@@ -79,146 +79,20 @@ cat <<EOF > "${parsers_file}"
     Regex       ^.*/addon-(?<addon_name>.+)\.log\$
 EOF
 
-{
-    cat <<EOF
-[SERVICE]
-    Flush        5
-    Log_Level    info
-    Parsers_File parsers.conf
-    HTTP_Server  Off
-
-EOF
-
-    if bashio::var.true "${collect_core_log}"; then
-        cat <<EOF
-[INPUT]
-    Name           tail
-    Tag            ha.core
-    Path           ${log_dir}/core.log
-    DB             /data/tail-core.db
-    Read_from_Head true
-
-EOF
-    fi
-
-    if bashio::var.true "${collect_host_log}"; then
-        cat <<EOF
-[INPUT]
-    Name           tail
-    Tag            ha.host
-    Path           ${log_dir}/host.log
-    DB             /data/tail-host.db
-    Read_from_Head true
-
-EOF
-    fi
-
-    if bashio::var.true "${collect_supervisor_log}"; then
-        cat <<EOF
-[INPUT]
-    Name           tail
-    Tag            ha.supervisor
-    Path           ${log_dir}/supervisor.log
-    DB             /data/tail-supervisor.db
-    Read_from_Head true
-
-EOF
-    fi
-
-    if bashio::var.true "${collect_addon_logs}"; then
-        cat <<EOF
-[INPUT]
-    Name           tail
-    Tag            ha.addon
-    Path           ${log_dir}/addon-*.log
-    Path_Key       filename
-    DB             /data/tail-addon.db
-    Read_from_Head true
-
-EOF
-    fi
-
-    cat <<EOF
-[FILTER]
-    Name    modify
-    Match   ha.core
-    Add     job ha_core
-    Add     source core
-    Add     addon_name -
-
-[FILTER]
-    Name    parser
-    Match   ha.core
-    Key_Name log
-    Parser  ha_log_line
-    Reserve_Data On
-
-[FILTER]
-    Name    parser
-    Match   ha.host
-    Key_Name log
-    Parser  ha_log_line
-    Reserve_Data On
-
-[FILTER]
-    Name    modify
-    Match   ha.host
-    Add     job ha_host
-    Add     source host
-    Add     addon_name -
-
-[FILTER]
-    Name    parser
-    Match   ha.supervisor
-    Key_Name log
-    Parser  ha_log_line
-    Reserve_Data On
-
-[FILTER]
-    Name    modify
-    Match   ha.supervisor
-    Add     job ha_supervisor
-    Add     source supervisor
-    Add     addon_name -
-
-[FILTER]
-    Name    parser
-    Match   ha.addon
-    Key_Name filename
-    Parser  addon_filename
-    Reserve_Data On
-
-[FILTER]
-    Name    modify
-    Match   ha.addon
-    Add     job ha_addon
-    Add     source addon
-    Remove  filename
-
-[OUTPUT]
-    Name         loki
-    Match        *
-    Host         ${loki_host}
-    Port         ${loki_port}
-    Tls          ${loki_tls}
-    Uri          ${loki_uri}
-EOF
-
-    if [[ -n "${loki_tenant_id}" ]]; then
-        echo "    Tenant_ID    ${loki_tenant_id}"
-    fi
-
-    if [[ -n "${loki_user}" ]]; then
-        echo "    http_user    ${loki_user}"
-        echo "    http_passwd  ${loki_password}"
-    fi
-
-    cat <<EOF
-    Labels       job=\$job, source=\$source, level=\$level, addon_name=\$addon_name
-    Line_Format  json
-    Auto_Kubernetes_Labels Off
-EOF
-} > "${config_file}"
+jinja2 \
+    --set-env loki_host "${loki_host}" \
+    --set-env loki_port "${loki_port}" \
+    --set-env loki_tls "${loki_tls}" \
+    --set-env loki_uri "${loki_uri}" \
+    --set-env loki_tenant_id "${loki_tenant_id}" \
+    --set-env loki_user "${loki_user}" \
+    --set-env loki_password "${loki_password}" \
+    --set-env collect_core_log "${collect_core_log}" \
+    --set-env collect_host_log "${collect_host_log}" \
+    --set-env collect_supervisor_log "${collect_supervisor_log}" \
+    --set-env collect_addon_logs "${collect_addon_logs}" \
+    --set-env log_dir "${log_dir}" \
+    /etc/fluent-bit/fluent-bit.conf.j2 > "${config_file}"
 
 bashio::log.info "Starting Fluent Bit..."
 fluent-bit -c "${config_file}"

@@ -1,0 +1,116 @@
+[SERVICE]
+    Flush        5
+    Log_Level    info
+    Parsers_File parsers.conf
+    HTTP_Server  Off
+
+{% if collect_core_log %}
+[INPUT]
+    Name           tail
+    Tag            ha.core
+    Path           {{ log_dir }}/core.log
+    DB             /data/tail-core.db
+    Read_from_Head true
+
+{% endif %}
+{% if collect_host_log %}
+[INPUT]
+    Name           tail
+    Tag            ha.host
+    Path           {{ log_dir }}/host.log
+    DB             /data/tail-host.db
+    Read_from_Head true
+
+{% endif %}
+{% if collect_supervisor_log %}
+[INPUT]
+    Name           tail
+    Tag            ha.supervisor
+    Path           {{ log_dir }}/supervisor.log
+    DB             /data/tail-supervisor.db
+    Read_from_Head true
+
+{% endif %}
+{% if collect_addon_logs %}
+[INPUT]
+    Name           tail
+    Tag            ha.addon
+    Path           {{ log_dir }}/addon-*.log
+    Path_Key       filename
+    DB             /data/tail-addon.db
+    Read_from_Head true
+
+{% endif %}
+[FILTER]
+    Name    modify
+    Match   ha.core
+    Add     job ha_core
+    Add     source core
+    Add     addon_name -
+
+[FILTER]
+    Name    parser
+    Match   ha.core
+    Key_Name log
+    Parser  ha_log_line
+    Reserve_Data On
+
+[FILTER]
+    Name    parser
+    Match   ha.host
+    Key_Name log
+    Parser  ha_log_line
+    Reserve_Data On
+
+[FILTER]
+    Name    modify
+    Match   ha.host
+    Add     job ha_host
+    Add     source host
+    Add     addon_name -
+
+[FILTER]
+    Name    parser
+    Match   ha.supervisor
+    Key_Name log
+    Parser  ha_log_line
+    Reserve_Data On
+
+[FILTER]
+    Name    modify
+    Match   ha.supervisor
+    Add     job ha_supervisor
+    Add     source supervisor
+    Add     addon_name -
+
+[FILTER]
+    Name    parser
+    Match   ha.addon
+    Key_Name filename
+    Parser  addon_filename
+    Reserve_Data On
+
+[FILTER]
+    Name    modify
+    Match   ha.addon
+    Add     job ha_addon
+    Add     source addon
+    Remove  filename
+
+[OUTPUT]
+    Name         loki
+    Match        *
+    Host         {{ loki_host }}
+    Port         {{ loki_port }}
+    Tls          {{ loki_tls }}
+    Uri          {{ loki_uri }}
+{% if loki_tenant_id %}
+    Tenant_ID    {{ loki_tenant_id }}
+{% endif %}
+{% if loki_user %}
+    http_user    {{ loki_user }}
+    http_passwd  {{ loki_password }}
+{% endif %}
+    Labels       job=$job, source=$source, level=$level, addon_name=$addon_name
+    Line_Format  json
+    Auto_Kubernetes_Labels Off

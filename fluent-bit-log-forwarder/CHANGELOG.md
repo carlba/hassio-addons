@@ -1,5 +1,10 @@
 <!-- https://developers.home-assistant.io/docs/apps/presentation#keeping-a-changelog -->
 
+## 0.3.9
+
+- Switched to using jinja2-cli and a template for the Fluent Bit config file. The heredocs where
+  getting increasingly hard to read.
+
 ## 0.3.8
 
 - The parser that parses the ha logs was used for addon logs which are not of the same format.
