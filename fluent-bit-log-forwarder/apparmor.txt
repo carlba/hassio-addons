@@ -11,6 +11,19 @@
 profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
   #include <abstractions/base>
   #include <abstractions/python>
+  # Covers /etc/resolv.conf, nsswitch.conf, hosts, host.conf, gai.conf, NSS
+  # libs, and DNS network access in one go — used by curl (Supervisor API)
+  # and bash's own name lookups. Standard abstraction instead of hand-
+  # listing each glibc resolver config file one denial at a time.
+  #include <abstractions/nameservice>
+  # Covers bash's own startup file reads (e.g. /etc/bash.bashrc)
+  #include <abstractions/bash>
+  # curl's TLS stack (openssl.cnf, engines) and CA cert bundle reads —
+  # replaces hand-listing /etc/ssl/**, ca-certificates paths one at a time
+  #include <abstractions/openssl>
+  #include <abstractions/ssl_certs>
+  # /dev/tty and friends
+  #include <abstractions/consoles>
 
   # Capabilities
   # NOTE: no bare `file,` rule here (unlike a stock HA app template) — it
@@ -22,16 +35,11 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
 
   # bashio::config / bashio::api.supervisor calls curl against the
   # Supervisor API (hassio_api: true in config.yaml) to read this addon's
-  # own options — needs network, DNS, and TLS cert access same as the
-  # fluent_bit child profile's own HTTP calls to Loki below.
+  # own options — needs network access same as the fluent_bit child
+  # profile's own HTTP calls to Loki below. DNS/TLS/CA certs covered by
+  # the abstractions above.
   network inet stream,
   network inet6 stream,
-  /etc/resolv.conf r,
-  /etc/ssl/** r,
-  /etc/ssl/openssl.cnf r,
-  /usr/lib/ssl/** r,
-  /usr/share/ca-certificates/** r,
-  /etc/ca-certificates.conf r,
 
   # S6-Overlay
   # `/init` is a `#!/bin/sh` script (see rootfs of base-debian:trixie), so
@@ -41,7 +49,9 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
   /bin/** ix,
   /usr/bin/** ix,
   # pip-installed jinja2-cli entry point (#!/usr/bin/python3 shebang, same
-  # open+read requirement as /init) plus the packages it imports
+  # open+read requirement as /init) plus the packages it imports; the bare
+  # dir entry needs `r` too (python lists it), same pattern as services.d
+  /usr/local/bin/ r,
   /usr/local/bin/** rix,
   /usr/local/lib/python3*/dist-packages/** r,
   /run/{s6,s6-rc*,service}/** ix,
@@ -61,7 +71,6 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
   /etc/cont-finish.d/ r,
   /etc/cont-finish.d/** rwix,
   /run/{,**} rwk,
-  /dev/tty rw,
 
   # s6-overlay-suexec reads these to resolve the container's user/group
   /etc/passwd r,
@@ -113,6 +122,9 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
   profile fluent_bit flags=(attach_disconnected,mediate_deleted) {
     #include <abstractions/base>
     #include <abstractions/openssl>
+    #include <abstractions/nameservice>
+    #include <abstractions/ssl_certs>
+    #include <abstractions/consoles>
 
     # Receive signals from S6-Overlay
     signal (receive) peer=*_fluent_bit_log_forwarder,
@@ -120,8 +132,13 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
     network inet stream,
     network inet6 stream,
 
-    # Access to options.json and other files within your app
-    /data/** rw,
+    # Access to options.json and other files within your app; `k` (lock) is
+    # required for the systemd input's sqlite cursor DB at /data/journal.db.
+    # Bare dir entry (name="/data/") also needed: fluent-bit opens the
+    # directory itself, which `**` alone doesn't cover (same pattern as
+    # /etc/services.d/ etc. in the parent profile above).
+    /data/ r,
+    /data/** rwk,
 
     # Fluent Bit config, parsers, and helper scripts
     /etc/fluent-bit/** rix,
@@ -132,14 +149,9 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
     /var/log/journal/** r,
 
     # Access required for service functionality
-    /usr/bin/fluent-bit r,
+    # `m` (mmap-exec): fluent-bit mmaps its own binary at startup
+    /usr/bin/fluent-bit mr,
     /etc/passwd r,
-    /etc/resolv.conf r,
-    /etc/ssl/** r,
-    /etc/ssl/openssl.cnf r,
-    /usr/lib/ssl/** r,
-    /usr/share/ca-certificates/** r,
-    /etc/ca-certificates.conf r,
     /proc/sys/kernel/random/uuid r,
     /proc/cpuinfo r,
     /proc/*/maps r,
@@ -147,6 +159,5 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
     /sys/devices/system/cpu/** r,
     /dev/urandom r,
     /dev/random r,
-    /dev/tty rw,
   }
 }
