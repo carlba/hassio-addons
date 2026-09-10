@@ -15,6 +15,18 @@
     Match           homeassistant
     Set             job homeassistant
 
+[FILTER]
+    Name            rewrite_tag
+    Match           homeassistant
+    Rule            $SYSLOG_IDENTIFIER ^kernel$ homeassistant.kernel false
+    Emitter_Name    kernel_emitter
+
+[FILTER]
+    Name            lua
+    Match           homeassistant.kernel
+    script          /etc/fluent-bit/scripts/level.lua
+    call            set_level
+
 
 [OUTPUT]
     Name   loki
