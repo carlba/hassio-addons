@@ -20,6 +20,19 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
   # throughout this profile already cover what the app needs.
   signal (send) set=(kill,term,int,hup,cont),
 
+  # bashio::config / bashio::api.supervisor calls curl against the
+  # Supervisor API (hassio_api: true in config.yaml) to read this addon's
+  # own options — needs network, DNS, and TLS cert access same as the
+  # fluent_bit child profile's own HTTP calls to Loki below.
+  network inet stream,
+  network inet6 stream,
+  /etc/resolv.conf r,
+  /etc/ssl/** r,
+  /etc/ssl/openssl.cnf r,
+  /usr/lib/ssl/** r,
+  /usr/share/ca-certificates/** r,
+  /etc/ca-certificates.conf r,
+
   # S6-Overlay
   # `/init` is a `#!/bin/sh` script (see rootfs of base-debian:trixie), so
   # the interpreter needs to open+read it as a file in addition to the
@@ -27,6 +40,10 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
   /init rix,
   /bin/** ix,
   /usr/bin/** ix,
+  # pip-installed jinja2-cli entry point (#!/usr/bin/python3 shebang, same
+  # open+read requirement as /init) plus the packages it imports
+  /usr/local/bin/** rix,
+  /usr/local/lib/python3*/dist-packages/** r,
   /run/{s6,s6-rc*,service}/** ix,
   # rix, not ix: several s6-overlay scripts under /package (e.g. preinit,
   # stage0/1/2) are #!/bin/sh scripts, and the interpreter needs to open+
@@ -56,7 +73,9 @@ profile fluent_bit_log_forwarder flags=(attach_disconnected,mediate_deleted) {
   /etc/s6-overlay/** r,
 
   # Bashio
-  /usr/lib/bashio/** ix,
+  # /usr/bin/bashio -> /usr/lib/bashio/bashio, itself a #!/usr/bin/env bash
+  # script — same open+read requirement as /init, so rix not ix.
+  /usr/lib/bashio/** rix,
   /tmp/** rwk,
 
   # run script renders the Fluent Bit config here via `mkdir -p` + jinja2
